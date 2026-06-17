@@ -71,7 +71,10 @@
         "withholding_declarations",
         "tax_filing_history",
         "compliance_status",
-        "tax_bracket_details"
+        "tax_bracket_details",
+        "tax_treaty_benefits",
+        "reciprocity_agreements",
+        "compliance_audit_logs"
       ],
       "properties": {
         "primary_jurisdiction": {
@@ -315,6 +318,159 @@
                     }
                   }
                 }
+              }
+            }
+          }
+        },
+        "tax_treaty_benefits": {
+          "type": "array",
+          "description": "Details any tax treaty benefits claimed by the employee.",
+          "items": {
+            "type": "object",
+            "required": [
+              "treaty_country_iso2",
+              "treaty_article_reference",
+              "benefit_type",
+              "effective_start_date",
+              "status"
+            ],
+            "properties": {
+              "treaty_country_iso2": {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$",
+                "description": "ISO 3166-1 alpha-2 code of the treaty country."
+              },
+              "treaty_article_reference": {
+                "type": "string",
+                "description": "Specific article of the tax treaty (e.g., 'Article 15 - Dependent Personal Services')."
+              },
+              "benefit_type": {
+                "type": "string",
+                "enum": [
+                  "Income_Exemption",
+                  "Reduced_Tax_Rate",
+                  "Credit_For_Foreign_Tax",
+                  "Other"
+                ],
+                "description": "Type of benefit claimed under the treaty."
+              },
+              "effective_start_date": {
+                "type": "string",
+                "format": "date",
+                "description": "Date from which the treaty benefit is effective."
+              },
+              "effective_end_date": {
+                "type": "string",
+                "format": "date",
+                "description": "Date until which the treaty benefit is effective, if applicable."
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "Active",
+                  "Expired",
+                  "Pending_Review",
+                  "Revoked"
+                ]
+              }
+            }
+          }
+        },
+        "reciprocity_agreements": {
+          "type": "array",
+          "description": "Agreements governing tax treatment for income earned across different jurisdictions (e.g., state-to-state).",
+          "items": {
+            "type": "object",
+            "required": [
+              "source_jurisdiction_code",
+              "target_jurisdiction_code",
+              "agreement_type",
+              "effective_date",
+              "status"
+            ],
+            "properties": {
+              "source_jurisdiction_code": {
+                "type": "string",
+                "description": "Code for the jurisdiction where income is earned (e.g., 'PA' for Pennsylvania, 'US-NY' for New York State)."
+              },
+              "target_jurisdiction_code": {
+                "type": "string",
+                "description": "Code for the employee's resident jurisdiction (e.g., 'NJ' for New Jersey, 'US-CA' for California State)."
+              },
+              "agreement_type": {
+                "type": "string",
+                "enum": [
+                  "Income_Tax",
+                  "Withholding_Tax",
+                  "Other"
+                ],
+                "description": "Type of tax covered by the reciprocity agreement."
+              },
+              "effective_date": {
+                "type": "string",
+                "format": "date",
+                "description": "Date when the reciprocity agreement became effective for this employee."
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "Active",
+                  "Inactive",
+                  "Pending_Verification"
+                ]
+              },
+              "notes": {
+                "type": "string",
+                "description": "Any specific notes or conditions related to this agreement."
+              }
+            }
+          }
+        },
+        "compliance_audit_logs": {
+          "type": "array",
+          "description": "Immutable log of compliance-related actions and reviews for the employee's tax profile.",
+          "items": {
+            "type": "object",
+            "required": [
+              "log_id",
+              "event_timestamp",
+              "event_type",
+              "actor_user_id",
+              "description"
+            ],
+            "properties": {
+              "log_id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "Unique identifier for the audit log entry."
+              },
+              "event_timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Timestamp of the audit event."
+              },
+              "event_type": {
+                "type": "string",
+                "enum": [
+                  "Data_Update",
+                  "Document_Generated",
+                  "Compliance_Review",
+                  "External_Audit_Request",
+                  "Status_Change"
+                ],
+                "description": "Type of compliance event logged."
+              },
+              "actor_user_id": {
+                "type": "string",
+                "description": "ID of the user or system responsible for the event."
+              },
+              "description": {
+                "type": "string",
+                "description": "Detailed description of the compliance event."
+              },
+              "related_document_hash": {
+                "type": "string",
+                "description": "SHA-256 hash of any related document, if applicable."
               }
             }
           }
@@ -613,7 +769,9 @@
         "current_fmv_per_share",
         "vesting_calculation_method",
         "acceleration_clauses",
-        "forfeiture_history"
+        "forfeiture_history",
+        "summary_metrics",
+        "expiration_tracking"
       ],
       "properties": {
         "grant_id": {
@@ -891,6 +1049,107 @@
                   "Other"
                 ]
               }
+            }
+          }
+        },
+        "summary_metrics": {
+          "type": "object",
+          "description": "Calculated summary metrics for the equity grant.",
+          "required": [
+            "total_shares_vested",
+            "total_shares_exercisable",
+            "total_shares_unvested",
+            "total_shares_forfeited",
+            "vesting_completion_percentage",
+            "projected_unrealized_gain_loss",
+            "last_vesting_event_date",
+            "next_vesting_event_date",
+            "next_vesting_shares"
+          ],
+          "properties": {
+            "total_shares_vested": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total number of shares that have vested to date."
+            },
+            "total_shares_exercisable": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total number of vested shares that have not yet been exercised."
+            },
+            "total_shares_unvested": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total number of shares remaining to vest."
+            },
+            "total_shares_forfeited": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Total number of shares that have been forfeited."
+            },
+            "vesting_completion_percentage": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Percentage of total granted shares that have vested."
+            },
+            "projected_unrealized_gain_loss": {
+              "type": "object",
+              "description": "Estimated unrealized gain/loss based on current FMV for exercisable shares.",
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "properties": {
+                "amount": {
+                  "type": "number"
+                },
+                "currency": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                }
+              }
+            },
+            "last_vesting_event_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Date of the most recent vesting event."
+            },
+            "next_vesting_event_date": {
+              "type": "string",
+              "format": "date",
+              "description": "Date of the next scheduled vesting event."
+            },
+            "next_vesting_shares": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of shares scheduled to vest at the next event."
+            }
+          }
+        },
+        "expiration_tracking": {
+          "type": "object",
+          "description": "Details regarding the expiration of equity options.",
+          "required": [
+            "option_expiration_date",
+            "days_to_expiration",
+            "post_termination_exercise_window_days"
+          ],
+          "properties": {
+            "option_expiration_date": {
+              "type": "string",
+              "format": "date",
+              "description": "The final date by which vested options must be exercised."
+            },
+            "days_to_expiration": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of days remaining until the options expire (calculated from current date)."
+            },
+            "post_termination_exercise_window_days": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of days an employee has to exercise vested options after termination (if applicable)."
             }
           }
         }
