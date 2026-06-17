@@ -4,6 +4,7 @@ import os
 import sys
 import urllib.request
 import urllib.error
+import subprocess
 
 # Ensure UTF-8 stream output for console interfaces (resolves Windows encoding issues)
 if sys.platform.startswith("win"):
@@ -136,6 +137,61 @@ def mock_test_and_validate(file_path: str, min_complex_fields: int = 5) -> tuple
         return False, f"Unexpected Validation Failure: {str(e)}"
 
 
+def auto_git_commit_and_push(user_requirement: str, file_path: str = "employee_model.json") -> None:
+    """Stages, commits, and pushes the updated schema file automatically."""
+    logger.info("Starting automated Git commit and push pipeline...")
+    
+    # 1. Stage the modified schema file
+    try:
+        add_res = subprocess.run(
+            ["git", "add", file_path],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        logger.info("Git add output: %s", add_res.stdout.strip() or "File staged successfully.")
+    except subprocess.CalledProcessError as ce:
+        logger.error("Git add failed: %s (stderr: %s)", str(ce), ce.stderr.strip())
+        return
+
+    # 2. Commit the file with a dynamic description
+    commit_message = f"feat: auto-update schema - {user_requirement}"
+    try:
+        commit_res = subprocess.run(
+            ["git", "commit", "-m", commit_message],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        logger.info("Git commit output: %s", commit_res.stdout.strip())
+    except subprocess.CalledProcessError as ce:
+        # Check if it failed because there's nothing to commit
+        stderr_msg = ce.stderr.lower()
+        stdout_msg = ce.stdout.lower()
+        if "nothing to commit" in stderr_msg or "nothing to commit" in stdout_msg or \
+           "no changes added to commit" in stderr_msg or "no changes added to commit" in stdout_msg:
+            logger.info("No modifications detected. Nothing to commit.")
+        else:
+            logger.error("Git commit failed: %s (stderr: %s)", str(ce), ce.stderr.strip())
+            return
+
+    # 3. Push to remote repository
+    try:
+        push_res = subprocess.run(
+            ["git", "push", "origin", "master"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        logger.info("Git push output: %s", push_res.stdout.strip() or "Pushed changes successfully.")
+    except subprocess.CalledProcessError as ce:
+        # Log error but do not crash the script, as requested
+        logger.error(
+            "Git push failed but local changes are preserved. "
+            "Error details: %s (stderr: %s)", str(ce), ce.stderr.strip()
+        )
+
+
 def run_agentic_workflow(user_requirement: str, file_path: str = "employee_model.json") -> None:
     """Executes the self-healing schema-generation loop using Google Gemini API."""
     logger.info("Starting Agentic Workflow for requirement: '%s'\n", user_requirement)
@@ -230,6 +286,7 @@ def run_agentic_workflow(user_requirement: str, file_path: str = "employee_model
             if valid:
                 logger.info("Success: %s", message)
                 logger.info("Integrity of code verified. Final output pushed to repository without bugs.")
+                auto_git_commit_and_push(user_requirement, file_path)
                 success = True
                 break
             else:
@@ -260,5 +317,12 @@ def run_agentic_workflow(user_requirement: str, file_path: str = "employee_model
 
 # Test execution
 if __name__ == "__main__":
-    user_requirement = "Add complex compliance, tax brackets and ESOP vesting metrics into existing structure."
-    run_agentic_workflow(user_requirement)
+    try:
+        user_requirement = input("Enter your natural language schema update requirement: ").strip()
+        if not user_requirement:
+            logger.error("No requirement entered. Exiting.")
+            sys.exit(1)
+        run_agentic_workflow(user_requirement)
+    except KeyboardInterrupt:
+        logger.info("\nWorkflow cancelled by user. Exiting.")
+        sys.exit(0)
