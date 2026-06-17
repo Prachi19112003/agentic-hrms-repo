@@ -2,14 +2,15 @@
 
 ## What This Project Does
 
-This project is an **agentic workflow** that takes a plain English (natural language) instruction — for example, *"Add a field for tracking employee anniversary bonuses"* — and automatically updates an existing enterprise HRMS (Human Resource Management System) data schema to include it.
+This project is a **fully autonomous agentic workflow** that takes a plain English (natural language) instruction — for example, *"Add a field for tracking employee parking permit allocation"* — and automatically updates an existing enterprise HRMS (Human Resource Management System) data schema to include it, **end to end, with no manual steps**.
 
-In simple terms: instead of a developer manually opening a schema file and writing new JSON fields by hand every time a new business requirement comes in, this system:
+In simple terms: instead of a developer manually opening a schema file, writing new JSON fields by hand, testing them, and then committing/pushing to GitHub, this system does all of it by itself:
 1. Takes the requirement in plain English
-2. Generates the correct schema update
+2. Generates the correct schema update using an AI reasoning engine
 3. Checks that the update is structurally valid
-4. If it's not valid, automatically retries and fixes it — without a human stepping in
-5. Saves the result and pushes it to this GitHub repository
+4. If it's not valid (or if the AI service itself fails temporarily), automatically retries and self-corrects — without a human stepping in
+5. Saves the result to disk
+6. **Automatically stages, commits, and pushes the change to this GitHub repository** — the entire pipeline runs from a single command with zero manual Git steps
 
 ---
 
@@ -20,7 +21,8 @@ In simple terms: instead of a developer manually opening a schema file and writi
 | Schema format | JSON Schema (Draft-07) |
 | Programming language | Python |
 | AI reasoning engine | Google Gemini API (`gemini-2.5-flash`) |
-| Version control | Git + GitHub |
+| Version control automation | Python `subprocess` module calling Git directly |
+| Version control hosting | GitHub |
 | Secrets management | `.env` file (excluded from Git via `.gitignore`) |
 | Development environment | VS Code |
 
@@ -44,7 +46,7 @@ You must output your response STRICTLY in this JSON format. No conversational te
 **Why this prompt is designed this way:**
 - It forces strictly parseable JSON output — no markdown fences, no extra commentary to strip out before the program can use the result.
 - The `thought_process` field requires explicit reasoning about *why* a field is being added and *where* it belongs in the schema, before the schema itself is generated. This improves placement accuracy (e.g., a bonus field goes under payroll, not under personal details).
-- The `status` field lets the program detect success vs. failure programmatically, which is what drives the retry logic.
+- The `status` field lets the program detect success vs. failure programmatically, which is what drives the retry logic and, ultimately, whether the Git pipeline fires at all.
 
 ---
 
@@ -53,8 +55,8 @@ You must output your response STRICTLY in this JSON format. No conversational te
 ```
 agentic-hrms-repo/
 ├── employee_model.json   # The HRMS JSON Schema being extended (the "existing software")
-├── agent_workflow.py      # The agentic workflow: takes input, calls the AI, validates, retries, logs
-├── .env                    # API key (never committed — excluded via .gitignore)
+├── agent_workflow.py      # The agentic workflow: input -> AI call -> validation -> retry -> auto Git push
+├── .env                    # API key (never committed -- excluded via .gitignore)
 ├── .gitignore               # Ensures secrets are never pushed to GitHub
 └── README.md                 # This file
 ```
@@ -69,7 +71,15 @@ agentic-hrms-repo/
 4. **Validation** — The returned schema is checked for valid JSON structure and a minimum level of structural complexity (it must contain genuinely nested objects/arrays, not a trivial addition).
 5. **Retry Loop** — If validation fails, or if the API itself fails (for example, a temporary `503 Service Unavailable` from Google's servers), the error is logged and the workflow automatically retries, up to 3 attempts, before flagging the run for manual review.
 6. **Save** — On success, `employee_model.json` is overwritten with the updated schema on disk.
-7. **Version Control** — The updated file is committed and pushed to GitHub as a separate, deliberate step (kept separate from the AI generation step so every change is tracked and reviewable in Git history, rather than being silently overwritten without a record).
+7. **Automated Git Pipeline** — Immediately after a successful validation, the workflow calls `auto_git_commit_and_push()`, which:
+   - Runs `git add employee_model.json`
+   - Runs `git commit` with a dynamically generated message that includes the natural language requirement used for that run (e.g. `feat: auto-update schema - Add a field for tracking employee parking permits`)
+   - Runs `git push origin master`
+   - Logs the output of every Git command through the same logger used for the rest of the workflow
+   - If there is nothing new to commit, this is logged as an informational message rather than treated as an error
+   - If the push fails (for example, a network or authentication issue), the failure is logged as an error, but the script does **not** crash — the schema update on disk is still considered a successful run, since the Git push is a delivery step layered on top of the core schema-update task
+
+This means a single command — `python agent_workflow.py` — takes a plain English sentence all the way through to a live, version-controlled change on GitHub, with no manual Git commands required at any point.
 
 ---
 
@@ -90,6 +100,7 @@ The schema models a full enterprise employee record across these areas:
 | `work_authorization_visa` | Passport, visa, and immigration sponsorship details |
 | `career_and_learning_development` | Training, certifications, course completion, learning budget |
 | `disciplinary_and_grievance_records` | Disciplinary actions and employee grievances |
+| `employee_status` | Current employment state (Active, On_Leave, Terminated, Retired) |
 | `employee_id` / `tenant_id` | Unique identifiers (the latter supports multiple companies using the same system) |
 
 ---
@@ -116,7 +127,7 @@ The schema models a full enterprise employee record across these areas:
 | `tax_year` (in filing history) | Year of a tax filing record | `minimum: 2000, maximum: 2100` | Sanity bound to catch typo years like 1850 or 9999 |
 | `form_type` | Type of tax form filed | `enum` covering US, Canada, UK, India, Hong Kong forms | Reflects genuine multi-country tax compliance |
 | `dual_residency_status` | Whether the employee is a tax resident in two countries | Boolean | Flags double-taxation risk for HR/legal follow-up |
-| `tax_bracket_details` *(added)* | Progressive tax bracket structure by jurisdiction and year | Nested array: outer array per jurisdiction, inner array of `{income_threshold_min, marginal_rate_percent, base_tax_amount}` | Real tax systems are progressive (different rates apply above different income thresholds); this models that directly rather than storing only a single total withheld amount |
+| `tax_bracket_details` | Progressive tax bracket structure by jurisdiction and year | Nested array: outer array per jurisdiction, inner array of `{income_threshold_min, marginal_rate_percent, base_tax_amount}` | Real tax systems are progressive (different rates apply above different income thresholds); this models that directly rather than storing only a single total withheld amount |
 
 ### `tiered_payroll_structure`
 
@@ -126,7 +137,7 @@ The schema models a full enterprise employee record across these areas:
 | `currency` | Pay currency | `pattern: ^[A-Z]{3}$` | Enforces ISO 4217 three-letter currency codes (USD, INR, EUR) |
 | `allocation_percentage` (direct deposit) | Percent of pay sent to a given bank account | `minimum: 0, maximum: 100` | Cannot allocate less than 0% or more than 100% of pay |
 | `deductions_hierarchy` / `priority_index` | Order in which deductions are taken if pay is insufficient | `minimum: 1` (1 = highest priority) | Models real payroll rules — statutory deductions like tax levies must be prioritized over optional ones like loan repayments |
-| `anniversary_bonuses` *(added)* | One-time bonuses tied to work-anniversary milestones | Array of `{milestone_year (>=1), bonus_amount: {amount >= 0, currency}, payout_date, status: enum}` | Models milestone-based recognition pay (5/10/15-year bonuses) as a recurring, trackable structure rather than a one-off manual payment, with a status field to track whether each milestone payout is pending, paid, or waived |
+| `anniversary_bonuses` | One-time bonuses tied to work-anniversary milestones | Array of `{milestone_year (>=1), bonus_amount: {amount >= 0, currency}, payout_date, status: enum}` | Models milestone-based recognition pay (5/10/15-year bonuses) as a recurring, trackable structure, with a status field to track whether each milestone payout is pending, paid, or waived |
 
 ### `esop_vesting_schedule`
 
@@ -135,10 +146,10 @@ The schema models a full enterprise employee record across these areas:
 | `security_type` | Type of equity grant | `enum`: ISO, NSO, RSU, Stock_Options | Matches standard equity compensation categories |
 | `vesting_mechanism.type` | How vesting is earned | `enum`: Time_Based, Performance_Based, Milestone_Hybrid | Real equity grants vest either on a timeline, on performance targets, or a mix of both |
 | `cliff_duration_months` | Minimum months before any shares vest | `minimum: 0` | A negative cliff period is meaningless |
-| `current_fmv_per_share` *(added)* | Latest Fair Market Value per share | Object with `amount`, `currency`, `as_of_date` | Share value changes over time and must be tied to a specific valuation date for accuracy |
-| `acceleration_clauses` *(added)* | Conditions that speed up vesting | `enum`: Single_Trigger_COC, Double_Trigger_COC, IPO, Termination_Without_Cause, Death_Disability | Models real legal clauses in equity agreements that change vesting if the company is acquired, goes public, or the employee is terminated |
+| `current_fmv_per_share` | Latest Fair Market Value per share | Object with `amount`, `currency`, `as_of_date` | Share value changes over time and must be tied to a specific valuation date for accuracy |
+| `acceleration_clauses` | Conditions that speed up vesting | `enum`: Single_Trigger_COC, Double_Trigger_COC, IPO, Termination_Without_Cause, Death_Disability | Models real legal clauses in equity agreements that change vesting if the company is acquired, goes public, or the employee is terminated |
 
-### `employee_status` *(added)*
+### `employee_status`
 
 | Field | Meaning | Constraint | Why |
 |---|---|---|---|
@@ -203,20 +214,15 @@ python agent_workflow.py
 ### 4. Enter your requirement
 When prompted in the terminal, type a plain English sentence describing the schema change, for example:
 ```
-Add a field for tracking employee anniversary bonuses with milestone years and bonus amount.
+Add a field for tracking employee parking permit allocation with permit number and assigned parking zone.
 ```
 
-### 5. Check the result
-```bash
-git diff employee_model.json
-```
-This shows exactly what was added or changed.
+### 5. That's it
+No further action is needed. The workflow validates the result and automatically commits and pushes the change to GitHub. The terminal output will show each Git step (`Git add output`, `Git commit output`, `Git push output`) as confirmation.
 
-### 6. Commit and push the change
+To manually double-check what changed at any time:
 ```bash
-git add employee_model.json
-git commit -m "describe the change here"
-git push origin master
+git log -n 5
 ```
 
 ---
@@ -227,5 +233,6 @@ git push origin master
 - **`thought_process` as a required output field** — forces reasoning about where a field belongs before it's generated, improving placement quality.
 - **Validation checks structure, not business logic** — the validator confirms the schema is syntactically correct and substantively complex, rather than simulating real payroll/tax math, keeping the workflow focused within scope.
 - **Retry capped at 3 attempts** — allows genuine self-correction (both for invalid AI output and for transient API failures like a `503` error) without risking an infinite loop; anything beyond 3 attempts is flagged for manual review.
-- **Git push is a separate, deliberate step** — keeping schema generation and version control separate ensures every change is intentional and traceable in Git history, rather than being silently auto-pushed.
+- **Git commit and push are fully automated, triggered only after validation succeeds** — this guarantees that only schema versions which have already passed structural validation are ever pushed to the remote repository; a failed or invalid generation never reaches GitHub.
+- **Git push failures do not crash the workflow** — a push can fail for reasons unrelated to the schema itself (network connectivity, authentication). Since the schema update on disk is the core deliverable, a push failure is logged as an error for visibility but does not roll back or invalidate the successful schema update.
 - **Secrets are excluded from version control from the start** — `.env` was added to `.gitignore` before the first commit to prevent any API key from ever entering the repository's history.
