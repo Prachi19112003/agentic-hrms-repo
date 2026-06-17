@@ -14,6 +14,7 @@
     "performance_matrix",
     "background_verification",
     "benefits_enrollment",
+    "parking_permit_allocation",
     "time_and_attendance",
     "work_authorization_visa",
     "career_and_learning_development",
@@ -1985,6 +1986,24 @@
               }
             }
           }
+        }
+      }
+    },
+    "parking_permit_allocation": {
+      "type": "object",
+      "description": "Details regarding employee parking permit allocation.",
+      "required": [
+        "permit_number",
+        "assigned_parking_zone"
+      ],
+      "properties": {
+        "permit_number": {
+          "type": "string",
+          "description": "Unique identifier for the employee's parking permit."
+        },
+        "assigned_parking_zone": {
+          "type": "string",
+          "description": "The specific parking zone or area assigned to the employee."
         }
       }
     },
