@@ -1,0 +1,2438 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EnterpriseEmployeeModel",
+  "description": "Enterprise-grade database schema definition for Global Employee profiles in a Multi-tenant HRMS, designed for compliance, performance, payroll, equity, and verification tracking.",
+  "type": "object",
+  "required": [
+    "employee_id",
+    "tenant_id",
+    "personal_details",
+    "tax_compliance",
+    "tiered_payroll_structure",
+    "esop_vesting_schedule",
+    "performance_matrix",
+    "background_verification",
+    "benefits_enrollment",
+    "time_and_attendance",
+    "work_authorization_visa",
+    "career_and_learning_development",
+    "disciplinary_and_grievance_records"
+  ],
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "pattern": "^EMP-[A-Z]{3,4}-\\d{5,8}$",
+      "description": "Unique global employee identifier formatted by region and serial number (e.g., EMP-APAC-100293)."
+    },
+    "tenant_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique multi-tenant isolation identifier for enterprise clients."
+    },
+    "personal_details": {
+      "type": "object",
+      "required": [
+        "first_name",
+        "last_name",
+        "date_of_birth",
+        "gender"
+      ],
+      "properties": {
+        "first_name": {
+          "type": "string"
+        },
+        "middle_name": {
+          "type": "string"
+        },
+        "last_name": {
+          "type": "string"
+        },
+        "date_of_birth": {
+          "type": "string",
+          "format": "date"
+        },
+        "gender": {
+          "type": "string",
+          "enum": [
+            "Male",
+            "Female",
+            "Non-binary",
+            "Prefer not to say"
+          ]
+        }
+      }
+    },
+    "tax_compliance": {
+      "type": "object",
+      "description": "Database object tracking global tax compliance, local declarations, withholdings, and audit status.",
+      "required": [
+        "primary_jurisdiction",
+        "tax_identifier_encrypted",
+        "withholding_declarations",
+        "tax_filing_history",
+        "compliance_status",
+        "tax_bracket_details"
+      ],
+      "properties": {
+        "primary_jurisdiction": {
+          "type": "object",
+          "required": [
+            "country_code",
+            "state_province",
+            "local_municipality"
+          ],
+          "properties": {
+            "country_code": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$",
+              "description": "ISO 3166-1 alpha-2 code."
+            },
+            "state_province": {
+              "type": "string",
+              "description": "State, province, or territory code."
+            },
+            "local_municipality": {
+              "type": "string",
+              "description": "City or municipal tax district identifier."
+            }
+          }
+        },
+        "tax_identifier_encrypted": {
+          "type": "object",
+          "required": [
+            "ciphertext",
+            "iv",
+            "key_version",
+            "algorithm"
+          ],
+          "properties": {
+            "ciphertext": {
+              "type": "string",
+              "description": "Base64 encoded encrypted tax ID (e.g., SSN, PAN, National ID)."
+            },
+            "iv": {
+              "type": "string",
+              "description": "Initialization vector used for symmetric encryption."
+            },
+            "key_version": {
+              "type": "string",
+              "description": "Version of the KMS key used for encryption."
+            },
+            "algorithm": {
+              "type": "string",
+              "default": "AES-256-GCM"
+            }
+          }
+        },
+        "withholding_declarations": {
+          "type": "object",
+          "required": [
+            "filing_status",
+            "allowances_claimed",
+            "additional_flat_withholding",
+            "exempt_status"
+          ],
+          "properties": {
+            "filing_status": {
+              "type": "string",
+              "enum": [
+                "Single",
+                "Married_Filing_Jointly",
+                "Married_Filing_Separately",
+                "Head_of_Household",
+                "Expat_Non_Resident"
+              ]
+            },
+            "allowances_claimed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "additional_flat_withholding": {
+              "type": "object",
+              "required": [
+                "amount",
+                "currency"
+              ],
+              "properties": {
+                "amount": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "currency": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                }
+              }
+            },
+            "exempt_status": {
+              "type": "boolean",
+              "description": "Flags if employee is completely exempt from statutory income withholdings."
+            }
+          }
+        },
+        "tax_filing_history": {
+          "type": "array",
+          "description": "Historical records of annual tax filings and corporate declarations generated.",
+          "items": {
+            "type": "object",
+            "required": [
+              "tax_year",
+              "form_type",
+              "total_taxable_income",
+              "total_tax_withheld",
+              "digital_signature_hash",
+              "filing_timestamp"
+            ],
+            "properties": {
+              "tax_year": {
+                "type": "integer",
+                "minimum": 2000,
+                "maximum": 2100
+              },
+              "form_type": {
+                "type": "string",
+                "enum": [
+                  "W2",
+                  "1099-NEC",
+                  "W4",
+                  "T4",
+                  "P60",
+                  "Form-16",
+                  "IR56F"
+                ]
+              },
+              "total_taxable_income": {
+                "type": "number"
+              },
+              "total_tax_withheld": {
+                "type": "number"
+              },
+              "digital_signature_hash": {
+                "type": "string",
+                "description": "SHA-256 validation fingerprint of the submitted document."
+              },
+              "filing_timestamp": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        },
+        "compliance_status": {
+          "type": "object",
+          "required": [
+            "has_active_tax_liens",
+            "dual_residency_status",
+            "last_compliance_audit_date",
+            "auditor_notes"
+          ],
+          "properties": {
+            "has_active_tax_liens": {
+              "type": "boolean"
+            },
+            "dual_residency_status": {
+              "type": "boolean",
+              "description": "Flags double taxation exposure."
+            },
+            "last_compliance_audit_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "auditor_notes": {
+              "type": "string"
+            }
+          }
+        },
+        "tax_bracket_details": {
+          "type": "array",
+          "description": "Defines applicable tax brackets and rates by jurisdiction and tax type.",
+          "items": {
+            "type": "object",
+            "required": [
+              "tax_year",
+              "jurisdiction_type",
+              "jurisdiction_identifier",
+              "tax_type",
+              "brackets"
+            ],
+            "properties": {
+              "tax_year": {
+                "type": "integer",
+                "minimum": 2000,
+                "description": "The tax year for which these brackets apply."
+              },
+              "jurisdiction_type": {
+                "type": "string",
+                "enum": [
+                  "Federal",
+                  "State",
+                  "Local",
+                  "Country"
+                ]
+              },
+              "jurisdiction_identifier": {
+                "type": "string",
+                "description": "e.g., 'US', 'CA', 'NY', 'NYC'."
+              },
+              "tax_type": {
+                "type": "string",
+                "enum": [
+                  "Income_Tax",
+                  "Capital_Gains_Tax",
+                  "Social_Security_Tax",
+                  "Medicare_Tax"
+                ]
+              },
+              "brackets": {
+                "type": "array",
+                "description": "Ordered list of tax brackets.",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "income_threshold_min",
+                    "marginal_rate_percent",
+                    "base_tax_amount"
+                  ],
+                  "properties": {
+                    "income_threshold_min": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "income_threshold_max": {
+                      "type": "number",
+                      "description": "Use null for 'no upper limit'."
+                    },
+                    "marginal_rate_percent": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100,
+                      "description": "Marginal tax rate for income within this bracket."
+                    },
+                    "base_tax_amount": {
+                      "type": "number",
+                      "minimum": 0,
+                      "description": "Fixed tax amount for income up to the previous bracket's max."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "tiered_payroll_structure": {
+      "type": "object",
+      "description": "Compensation model outlining grade brackets, base pays, performance-tied commissions, variable bonuses, and priority-sorted deductions.",
+      "required": [
+        "compensation_band",
+        "base_compensation",
+        "variable_compensation",
+        "benefit_allowances",
+        "retirement_matching_config",
+        "deductions_hierarchy"
+      ],
+      "properties": {
+        "compensation_band": {
+          "type": "object",
+          "required": [
+            "grade_level",
+            "salary_range_min",
+            "salary_range_max",
+            "currency"
+          ],
+          "properties": {
+            "grade_level": {
+              "type": "string",
+              "pattern": "^L[1-9][0-9]?$"
+            },
+            "salary_range_min": {
+              "type": "number",
+              "minimum": 0
+            },
+            "salary_range_max": {
+              "type": "number",
+              "minimum": 0
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            }
+          }
+        },
+        "base_compensation": {
+          "type": "object",
+          "required": [
+            "frequency",
+            "gross_amount",
+            "hourly_equivalent",
+            "pay_distribution_method"
+          ],
+          "properties": {
+            "frequency": {
+              "type": "string",
+              "enum": [
+                "Weekly",
+                "Bi-Weekly",
+                "Semi-Monthly",
+                "Monthly"
+              ]
+            },
+            "gross_amount": {
+              "type": "number",
+              "minimum": 0
+            },
+            "hourly_equivalent": {
+              "type": "number",
+              "minimum": 0
+            },
+            "pay_distribution_method": {
+              "type": "object",
+              "required": [
+                "routing_mode",
+                "direct_deposit_allocations"
+              ],
+              "properties": {
+                "routing_mode": {
+                  "type": "string",
+                  "enum": [
+                    "Direct_Deposit",
+                    "Wire_Transfer",
+                    "Physical_Check"
+                  ]
+                },
+                "direct_deposit_allocations": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "bank_name",
+                      "routing_number_encrypted",
+                      "account_number_encrypted",
+                      "allocation_percentage"
+                    ],
+                    "properties": {
+                      "bank_name": {
+                        "type": "string"
+                      },
+                      "routing_number_encrypted": {
+                        "type": "string"
+                      },
+                      "account_number_encrypted": {
+                        "type": "string"
+                      },
+                      "allocation_percentage": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "variable_compensation": {
+          "type": "object",
+          "required": [
+            "on_target_earnings",
+            "commission_tier_rates",
+            "discretionary_bonus_multiplier"
+          ],
+          "properties": {
+            "on_target_earnings": {
+              "type": "number"
+            },
+            "commission_tier_rates": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "tier_limit",
+                  "multiplier_rate"
+                ],
+                "properties": {
+                  "tier_limit": {
+                    "type": "number",
+                    "description": "Revenue target threshold for this tier."
+                  },
+                  "multiplier_rate": {
+                    "type": "number",
+                    "description": "Payout percentage multiplier (e.g., 0.05 for 5%)."
+                  }
+                }
+              }
+            },
+            "discretionary_bonus_multiplier": {
+              "type": "number",
+              "default": 1.0
+            }
+          }
+        },
+        "benefit_allowances": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "type",
+              "amount",
+              "taxable",
+              "frequency"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "Housing",
+                  "Wellness",
+                  "Car_Allowance",
+                  "Remote_Work",
+                  "Educational_Assistance"
+                ]
+              },
+              "amount": {
+                "type": "number"
+              },
+              "taxable": {
+                "type": "boolean"
+              },
+              "frequency": {
+                "type": "string",
+                "enum": [
+                  "Monthly",
+                  "Quarterly",
+                  "Annual",
+                  "One_Time"
+                ]
+              }
+            }
+          }
+        },
+        "retirement_matching_config": {
+          "type": "object",
+          "required": [
+            "plan_type",
+            "employee_contribution_percent",
+            "employer_matching_brackets"
+          ],
+          "properties": {
+            "plan_type": {
+              "type": "string",
+              "enum": [
+                "401k",
+                "RRSP",
+                "Superannuation",
+                "EPF",
+                "Pension_Plan"
+              ]
+            },
+            "employee_contribution_percent": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
+            },
+            "employer_matching_brackets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "up_to_employee_contribution_percent",
+                  "employer_match_ratio"
+                ],
+                "properties": {
+                  "up_to_employee_contribution_percent": {
+                    "type": "number",
+                    "description": "The upper bound of employee's contribution for this tier (e.g. up to 3%)."
+                  },
+                  "employer_match_ratio": {
+                    "type": "number",
+                    "description": "The matching factor (e.g., 1.0 means 100% match, 0.5 means 50% match)."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "deductions_hierarchy": {
+          "type": "array",
+          "description": "Determines the priority order for payroll processing of deductions, specifically for scenarios with insufficient earnings.",
+          "items": {
+            "type": "object",
+            "required": [
+              "deduction_code",
+              "category",
+              "priority_index",
+              "fixed_amount",
+              "is_statutory"
+            ],
+            "properties": {
+              "deduction_code": {
+                "type": "string",
+                "pattern": "^DED-[A-Z]{3}-\\d{3}$"
+              },
+              "category": {
+                "type": "string",
+                "enum": [
+                  "Tax_Withholding",
+                  "Child_Support",
+                  "Tax_Levy",
+                  "Health_Premium",
+                  "Retirement_Contribution",
+                  "Company_Loan_Repayment"
+                ]
+              },
+              "priority_index": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "1 is highest priority."
+              },
+              "fixed_amount": {
+                "type": "number"
+              },
+              "is_statutory": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "esop_vesting_schedule": {
+      "type": "object",
+      "description": "Details regarding equity grants, vesting types, schedules, exercise history, and compliance with option pools.",
+      "required": [
+        "grant_id",
+        "security_type",
+        "grant_date",
+        "total_shares_granted",
+        "strike_price",
+        "vesting_mechanism",
+        "tranches",
+        "exercise_history",
+        "current_fmv_per_share",
+        "vesting_calculation_method",
+        "acceleration_clauses",
+        "forfeiture_history"
+      ],
+      "properties": {
+        "grant_id": {
+          "type": "string",
+          "pattern": "^EQT-\\d{4}-[A-Z]{3}-\\d{4}$"
+        },
+        "security_type": {
+          "type": "string",
+          "enum": [
+            "ISO",
+            "NSO",
+            "RSU",
+            "Stock_Options"
+          ]
+        },
+        "grant_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "total_shares_granted": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "strike_price": {
+          "type": "object",
+          "required": [
+            "amount",
+            "currency"
+          ],
+          "properties": {
+            "amount": {
+              "type": "number"
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            }
+          }
+        },
+        "vesting_mechanism": {
+          "type": "object",
+          "required": [
+            "type",
+            "cliff_duration_months",
+            "vesting_duration_months",
+            "frequency"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Time_Based",
+                "Performance_Based",
+                "Milestone_Hybrid"
+              ]
+            },
+            "cliff_duration_months": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "vesting_duration_months": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "frequency": {
+              "type": "string",
+              "enum": [
+                "Monthly",
+                "Quarterly",
+                "Bi-Annually",
+                "Annually"
+              ]
+            },
+            "performance_triggers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "trigger_id",
+                  "metric_description",
+                  "target_threshold",
+                  "validation_authority"
+                ],
+                "properties": {
+                  "trigger_id": {
+                    "type": "string"
+                  },
+                  "metric_description": {
+                    "type": "string"
+                  },
+                  "target_threshold": {
+                    "type": "string"
+                  },
+                  "validation_authority": {
+                    "type": "string",
+                    "description": "e.g., 'Board of Directors' or 'Compensation Committee'."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tranches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "tranche_id",
+              "scheduled_vest_date",
+              "allocated_shares",
+              "status",
+              "vesting_milestone_ref"
+            ],
+            "properties": {
+              "tranche_id": {
+                "type": "string"
+              },
+              "scheduled_vest_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "allocated_shares": {
+                "type": "integer"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "Pending",
+                  "Vested",
+                  "Forfeited",
+                  "Suspended"
+                ]
+              },
+              "vesting_milestone_ref": {
+                "type": "string",
+                "description": "Maps to a specific performance trigger if performance-based."
+              }
+            }
+          }
+        },
+        "exercise_history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "transaction_id",
+              "exercise_date",
+              "shares_exercised",
+              "fmv_at_exercise",
+              "tax_withholding_applied",
+              "equity_account_reference"
+            ],
+            "properties": {
+              "transaction_id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "exercise_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "shares_exercised": {
+                "type": "integer"
+              },
+              "fmv_at_exercise": {
+                "type": "number",
+                "description": "Fair Market Value per share on the date of exercise."
+              },
+              "tax_withholding_applied": {
+                "type": "number"
+              },
+              "equity_account_reference": {
+                "type": "string",
+                "description": "Brokerage account ID linked to equity disbursement."
+              }
+            }
+          }
+        },
+        "current_fmv_per_share": {
+          "type": "object",
+          "description": "Fair Market Value per share as of the last valuation date.",
+          "required": [
+            "amount",
+            "currency",
+            "as_of_date"
+          ],
+          "properties": {
+            "amount": {
+              "type": "number",
+              "minimum": 0
+            },
+            "currency": {
+              "type": "string",
+              "pattern": "^[A-Z]{3}$"
+            },
+            "as_of_date": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        },
+        "vesting_calculation_method": {
+          "type": "string",
+          "enum": [
+            "Linear",
+            "Graded",
+            "Back_Loaded"
+          ],
+          "description": "Method used to calculate shares vested per period after cliff (e.g., 25% after year 1, then 1/48th monthly)."
+        },
+        "acceleration_clauses": {
+          "type": "array",
+          "description": "Conditions under which vesting might accelerate.",
+          "items": {
+            "type": "object",
+            "required": [
+              "clause_type",
+              "trigger_event",
+              "acceleration_percentage",
+              "effective_date_mechanism"
+            ],
+            "properties": {
+              "clause_type": {
+                "type": "string",
+                "enum": [
+                  "Single_Trigger_COC",
+                  "Double_Trigger_COC",
+                  "IPO",
+                  "Termination_Without_Cause",
+                  "Death_Disability"
+                ]
+              },
+              "trigger_event": {
+                "type": "string",
+                "description": "Description of the event that triggers acceleration."
+              },
+              "acceleration_percentage": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "description": "Percentage of remaining unvested shares that accelerate (0-100)."
+              },
+              "effective_date_mechanism": {
+                "type": "string",
+                "description": "How the effective date of acceleration is determined (e.g., 'Date of Event', '30_Days_Post_Event')."
+              }
+            }
+          }
+        },
+        "forfeiture_history": {
+          "type": "array",
+          "description": "Records of forfeited shares due to specific events.",
+          "items": {
+            "type": "object",
+            "required": [
+              "forfeiture_date",
+              "shares_forfeited",
+              "reason"
+            ],
+            "properties": {
+              "forfeiture_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "shares_forfeited": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "reason": {
+                "type": "string",
+                "enum": [
+                  "Voluntary_Resignation",
+                  "Termination_For_Cause",
+                  "Non_Compliance_Performance",
+                  "Other"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "performance_matrix": {
+      "type": "object",
+      "description": "Employee performance evaluations including multi-source appraisals, goal cycles (OKRs), calibrated matrices (9-box grid), and improvement program tracking.",
+      "required": [
+        "appraisal_cycle_id",
+        "okr_evaluations",
+        "calibration_grid_score",
+        "competency_ratings",
+        "performance_improvement_plan"
+      ],
+      "properties": {
+        "appraisal_cycle_id": {
+          "type": "string",
+          "pattern": "^PERF-\\d{4}-(H1|H2|Q[1-4])$"
+        },
+        "okr_evaluations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "objective_id",
+              "objective_description",
+              "weightage",
+              "key_results"
+            ],
+            "properties": {
+              "objective_id": {
+                "type": "string"
+              },
+              "objective_description": {
+                "type": "string"
+              },
+              "weightage": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1.0
+              },
+              "key_results": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "kr_id",
+                    "description",
+                    "target_value",
+                    "actual_value",
+                    "self_assessment_score",
+                    "manager_assessment_score"
+                  ],
+                  "properties": {
+                    "kr_id": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "target_value": {
+                      "type": "number"
+                    },
+                    "actual_value": {
+                      "type": "number"
+                    },
+                    "self_assessment_score": {
+                      "type": "number",
+                      "minimum": 1.0,
+                      "maximum": 5.0
+                    },
+                    "manager_assessment_score": {
+                      "type": "number",
+                      "minimum": 1.0,
+                      "maximum": 5.0
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "calibration_grid_score": {
+          "type": "object",
+          "required": [
+            "performance_score",
+            "potential_score",
+            "nine_box_placement",
+            "calibration_date",
+            "calibration_committee_reference"
+          ],
+          "properties": {
+            "performance_score": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3,
+              "description": "1: Low, 2: Medium, 3: High"
+            },
+            "potential_score": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3,
+              "description": "1: Low, 2: Medium, 3: High"
+            },
+            "nine_box_placement": {
+              "type": "string",
+              "enum": [
+                "Star",
+                "High_Potential",
+                "High_Performer",
+                "Enigma",
+                "Core_Player",
+                "Solid_Performer",
+                "Dilemma",
+                "Effective_Doer",
+                "Underperformer"
+              ]
+            },
+            "calibration_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "calibration_committee_reference": {
+              "type": "string"
+            }
+          }
+        },
+        "competency_ratings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "competency_name",
+              "rating",
+              "evaluated_by",
+              "feedback_comments"
+            ],
+            "properties": {
+              "competency_name": {
+                "type": "string",
+                "enum": [
+                  "Technical_Competence",
+                  "Leadership",
+                  "Communication",
+                  "Problem_Solving",
+                  "Collaboration",
+                  "Strategic_Thinking"
+                ]
+              },
+              "rating": {
+                "type": "number",
+                "minimum": 1.0,
+                "maximum": 5.0
+              },
+              "evaluated_by": {
+                "type": "string",
+                "enum": [
+                  "Self",
+                  "Peer",
+                  "Manager",
+                  "Direct_Report"
+                ]
+              },
+              "feedback_comments": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "performance_improvement_plan": {
+          "type": "object",
+          "required": [
+            "is_active",
+            "plan_timeline",
+            "milestones",
+            "consequences_of_failure"
+          ],
+          "properties": {
+            "is_active": {
+              "type": "boolean"
+            },
+            "plan_timeline": {
+              "type": "object",
+              "properties": {
+                "start_date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "end_date": {
+                  "type": "string",
+                  "format": "date"
+                }
+              }
+            },
+            "milestones": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "milestone_description",
+                  "target_date",
+                  "status",
+                  "assessing_manager_id"
+                ],
+                "properties": {
+                  "milestone_description": {
+                    "type": "string"
+                  },
+                  "target_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Not_Met",
+                      "Partially_Met",
+                      "Fully_Met"
+                    ]
+                  },
+                  "assessing_manager_id": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "consequences_of_failure": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "background_verification": {
+      "type": "object",
+      "description": "Multi-agency verification status across education, criminal record, employment, and credit scoring.",
+      "required": [
+        "overall_status",
+        "initiated_date",
+        "completion_date",
+        "verification_agencies",
+        "verification_checks"
+      ],
+      "properties": {
+        "overall_status": {
+          "type": "string",
+          "enum": [
+            "Initiated",
+            "In_Progress",
+            "Pass",
+            "Pass_With_Discrepancies",
+            "Fail",
+            "Escalated"
+          ]
+        },
+        "initiated_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "completion_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "verification_agencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "agency_name",
+              "agency_case_id",
+              "contact_details"
+            ],
+            "properties": {
+              "agency_name": {
+                "type": "string"
+              },
+              "agency_case_id": {
+                "type": "string"
+              },
+              "contact_details": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "phone": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "verification_checks": {
+          "type": "object",
+          "required": [
+            "criminal_records",
+            "education_credentials",
+            "employment_history",
+            "credit_history",
+            "reference_checks"
+          ],
+          "properties": {
+            "criminal_records": {
+              "type": "object",
+              "required": [
+                "status",
+                "jurisdictions_checked",
+                "discrepancies_found",
+                "agency_assigned",
+                "report_reference_hash"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "Completed",
+                    "Pending",
+                    "Failed"
+                  ]
+                },
+                "jurisdictions_checked": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "discrepancies_found": {
+                  "type": "boolean"
+                },
+                "agency_assigned": {
+                  "type": "string"
+                },
+                "report_reference_hash": {
+                  "type": "string",
+                  "description": "Cryptographic hash of the background check report."
+                }
+              }
+            },
+            "education_credentials": {
+              "type": "object",
+              "required": [
+                "status",
+                "verified_credentials",
+                "discrepancies_found",
+                "agency_assigned",
+                "report_reference_hash"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "Completed",
+                    "Pending",
+                    "Failed"
+                  ]
+                },
+                "verified_credentials": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "institution_name",
+                      "degree_earned",
+                      "graduation_year"
+                    ],
+                    "properties": {
+                      "institution_name": {
+                        "type": "string"
+                      },
+                      "degree_earned": {
+                        "type": "string"
+                      },
+                      "graduation_year": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "discrepancies_found": {
+                  "type": "boolean"
+                },
+                "agency_assigned": {
+                  "type": "string"
+                },
+                "report_reference_hash": {
+                  "type": "string"
+                }
+              }
+            },
+            "employment_history": {
+              "type": "object",
+              "required": [
+                "status",
+                "verified_employers",
+                "discrepancies_found",
+                "agency_assigned",
+                "report_reference_hash"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "Completed",
+                    "Pending",
+                    "Failed"
+                  ]
+                },
+                "verified_employers": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "employer_name",
+                      "verified_tenure_start",
+                      "verified_tenure_end",
+                      "title_verified"
+                    ],
+                    "properties": {
+                      "employer_name": {
+                        "type": "string"
+                      },
+                      "verified_tenure_start": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "verified_tenure_end": {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      "title_verified": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "discrepancies_found": {
+                  "type": "boolean"
+                },
+                "agency_assigned": {
+                  "type": "string"
+                },
+                "report_reference_hash": {
+                  "type": "string"
+                }
+              }
+            },
+            "credit_history": {
+              "type": "object",
+              "required": [
+                "status",
+                "credit_score_band",
+                "has_bankruptcies",
+                "agency_assigned",
+                "report_reference_hash"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "Completed",
+                    "Pending",
+                    "Failed"
+                  ]
+                },
+                "credit_score_band": {
+                  "type": "string",
+                  "enum": [
+                    "Excellent",
+                    "Good",
+                    "Fair",
+                    "Poor"
+                  ]
+                },
+                "has_bankruptcies": {
+                  "type": "boolean"
+                },
+                "agency_assigned": {
+                  "type": "string"
+                },
+                "report_reference_hash": {
+                  "type": "string"
+                }
+              }
+            },
+            "reference_checks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "referee_name",
+                  "relation",
+                  "verdict",
+                  "documented_feedback"
+                ],
+                "properties": {
+                  "referee_name": {
+                    "type": "string"
+                  },
+                  "relation": {
+                    "type": "string"
+                  },
+                  "verdict": {
+                    "type": "string",
+                    "enum": [
+                      "Recommend",
+                      "Recommend_With_Reservation",
+                      "Do_Not_Recommend"
+                    ]
+                  },
+                  "documented_feedback": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "benefits_enrollment": {
+      "type": "object",
+      "description": "Enterprise benefit allocations, including health insurance tiers, supplementary options, tax-advantaged contributions, and dependent coverage.",
+      "required": [
+        "benefit_plan_year",
+        "status",
+        "health_insurance",
+        "supplementary_benefits",
+        "tax_advantaged_accounts",
+        "dependents"
+      ],
+      "properties": {
+        "benefit_plan_year": {
+          "type": "integer",
+          "minimum": 2000,
+          "maximum": 2100
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Open_Enrollment",
+            "Enrolled",
+            "Waived",
+            "Expired"
+          ]
+        },
+        "health_insurance": {
+          "type": "object",
+          "required": [
+            "provider_name",
+            "plan_id",
+            "coverage_tier",
+            "monthly_premiums"
+          ],
+          "properties": {
+            "provider_name": {
+              "type": "string"
+            },
+            "plan_id": {
+              "type": "string"
+            },
+            "coverage_tier": {
+              "type": "string",
+              "enum": [
+                "Employee_Only",
+                "Employee_Spouse",
+                "Employee_Children",
+                "Family"
+              ]
+            },
+            "monthly_premiums": {
+              "type": "object",
+              "required": [
+                "employer_share",
+                "employee_share",
+                "currency"
+              ],
+              "properties": {
+                "employer_share": {
+                  "type": "number"
+                },
+                "employee_share": {
+                  "type": "number"
+                },
+                "currency": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                }
+              }
+            }
+          }
+        },
+        "supplementary_benefits": {
+          "type": "object",
+          "required": [
+            "dental_plan",
+            "vision_plan",
+            "life_insurance"
+          ],
+          "properties": {
+            "dental_plan": {
+              "type": "object",
+              "required": [
+                "enrolled",
+                "coverage_level"
+              ],
+              "properties": {
+                "enrolled": {
+                  "type": "boolean"
+                },
+                "coverage_level": {
+                  "type": "string",
+                  "enum": [
+                    "Standard",
+                    "Premium",
+                    "None"
+                  ]
+                }
+              }
+            },
+            "vision_plan": {
+              "type": "object",
+              "required": [
+                "enrolled",
+                "coverage_level"
+              ],
+              "properties": {
+                "enrolled": {
+                  "type": "boolean"
+                },
+                "coverage_level": {
+                  "type": "string",
+                  "enum": [
+                    "Standard",
+                    "Premium",
+                    "None"
+                  ]
+                }
+              }
+            },
+            "life_insurance": {
+              "type": "object",
+              "required": [
+                "enrolled",
+                "coverage_multiple_salary",
+                "beneficiaries"
+              ],
+              "properties": {
+                "enrolled": {
+                  "type": "boolean"
+                },
+                "coverage_multiple_salary": {
+                  "type": "number",
+                  "description": "e.g., 2.0 times basic annual salary."
+                },
+                "beneficiaries": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "full_name",
+                      "relationship",
+                      "payout_percentage"
+                    ],
+                    "properties": {
+                      "full_name": {
+                        "type": "string"
+                      },
+                      "relationship": {
+                        "type": "string"
+                      },
+                      "payout_percentage": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tax_advantaged_accounts": {
+          "type": "object",
+          "required": [
+            "hsa",
+            "fsa"
+          ],
+          "properties": {
+            "hsa": {
+              "type": "object",
+              "required": [
+                "enrolled",
+                "employee_annual_contribution",
+                "employer_annual_seed"
+              ],
+              "properties": {
+                "enrolled": {
+                  "type": "boolean"
+                },
+                "employee_annual_contribution": {
+                  "type": "number"
+                },
+                "employer_annual_seed": {
+                  "type": "number"
+                }
+              }
+            },
+            "fsa": {
+              "type": "object",
+              "required": [
+                "enrolled",
+                "category",
+                "employee_annual_contribution"
+              ],
+              "properties": {
+                "enrolled": {
+                  "type": "boolean"
+                },
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "Medical",
+                    "Dependent_Care",
+                    "Limited_Purpose",
+                    "None"
+                  ]
+                },
+                "employee_annual_contribution": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        "dependents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "full_name",
+              "relationship",
+              "date_of_birth",
+              "tax_identifier_encrypted"
+            ],
+            "properties": {
+              "full_name": {
+                "type": "string"
+              },
+              "relationship": {
+                "type": "string",
+                "enum": [
+                  "Spouse",
+                  "Domestic_Partner",
+                  "Child",
+                  "Other"
+                ]
+              },
+              "date_of_birth": {
+                "type": "string",
+                "format": "date"
+              },
+              "tax_identifier_encrypted": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "time_and_attendance": {
+      "type": "object",
+      "description": "Configurable parameters tracking leave accrual policies, balances, work schedules, clock logs, and exception overrides.",
+      "required": [
+        "leave_balances",
+        "work_schedule_policy",
+        "geofencing_config",
+        "attendance_exceptions"
+      ],
+      "properties": {
+        "leave_balances": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "leave_type",
+              "accrual_rate_hours_monthly",
+              "carried_forward_hours",
+              "accrued_hours_ytd",
+              "taken_hours_ytd",
+              "pending_hours"
+            ],
+            "properties": {
+              "leave_type": {
+                "type": "string",
+                "enum": [
+                  "Annual_Leave",
+                  "Sick_Leave",
+                  "Bereavement_Leave",
+                  "Parental_Leave",
+                  "Jury_Duty",
+                  "Sabbatical"
+                ]
+              },
+              "accrual_rate_hours_monthly": {
+                "type": "number"
+              },
+              "carried_forward_hours": {
+                "type": "number"
+              },
+              "accrued_hours_ytd": {
+                "type": "number"
+              },
+              "taken_hours_ytd": {
+                "type": "number"
+              },
+              "pending_hours": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "work_schedule_policy": {
+          "type": "object",
+          "required": [
+            "weekly_hours_required",
+            "pattern_type",
+            "shift_start_time_utc",
+            "shift_end_time_utc",
+            "overtime_eligibility_flag"
+          ],
+          "properties": {
+            "weekly_hours_required": {
+              "type": "number"
+            },
+            "pattern_type": {
+              "type": "string",
+              "enum": [
+                "Fixed_9_to_5",
+                "Flexible_Hours",
+                "Rotating_Shift",
+                "Four_Day_Workweek"
+              ]
+            },
+            "shift_start_time_utc": {
+              "type": "string",
+              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$"
+            },
+            "shift_end_time_utc": {
+              "type": "string",
+              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$"
+            },
+            "overtime_eligibility_flag": {
+              "type": "boolean"
+            }
+          }
+        },
+        "geofencing_config": {
+          "type": "object",
+          "required": [
+            "is_enabled",
+            "restricted_ips",
+            "valid_radius_meters",
+            "coordinates_whitelist"
+          ],
+          "properties": {
+            "is_enabled": {
+              "type": "boolean"
+            },
+            "restricted_ips": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "ipv4"
+              }
+            },
+            "valid_radius_meters": {
+              "type": "integer"
+            },
+            "coordinates_whitelist": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "latitude",
+                  "longitude",
+                  "site_name"
+                ],
+                "properties": {
+                  "latitude": {
+                    "type": "number"
+                  },
+                  "longitude": {
+                    "type": "number"
+                  },
+                  "site_name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "attendance_exceptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "date",
+              "exception_type",
+              "duration_minutes",
+              "override_approved",
+              "approved_by_manager_id",
+              "resolution_comments"
+            ],
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "exception_type": {
+                "type": "string",
+                "enum": [
+                  "Late_Clock_In",
+                  "Early_Clock_Out",
+                  "Missed_Punch",
+                  "Unauthorized_Overtime",
+                  "Absent"
+                ]
+              },
+              "duration_minutes": {
+                "type": "integer"
+              },
+              "override_approved": {
+                "type": "boolean"
+              },
+              "approved_by_manager_id": {
+                "type": "string"
+              },
+              "resolution_comments": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "work_authorization_visa": {
+      "type": "object",
+      "description": "Monitors right-to-work status, passports, visa sponsorships, legal process lifecycle, and filing milestones.",
+      "required": [
+        "citizenship_info",
+        "passport_details",
+        "visa_details",
+        "sponsorship_lifecycle",
+        "compliance_documentation"
+      ],
+      "properties": {
+        "citizenship_info": {
+          "type": "object",
+          "required": [
+            "primary_nationality_iso2",
+            "dual_citizenship_held",
+            "right_to_work_verified"
+          ],
+          "properties": {
+            "primary_nationality_iso2": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            },
+            "dual_citizenship_held": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Z]{2}$"
+              }
+            },
+            "right_to_work_verified": {
+              "type": "boolean"
+            }
+          }
+        },
+        "passport_details": {
+          "type": "object",
+          "required": [
+            "passport_number_encrypted",
+            "issuing_country_iso2",
+            "issue_date",
+            "expiration_date"
+          ],
+          "properties": {
+            "passport_number_encrypted": {
+              "type": "string"
+            },
+            "issuing_country_iso2": {
+              "type": "string",
+              "pattern": "^[A-Z]{2}$"
+            },
+            "issue_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "expiration_date": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        },
+        "visa_details": {
+          "type": "object",
+          "required": [
+            "requires_visa",
+            "visa_type",
+            "visa_number_encrypted",
+            "issue_date",
+            "expiration_date",
+            "sponsor_legal_entity"
+          ],
+          "properties": {
+            "requires_visa": {
+              "type": "boolean"
+            },
+            "visa_type": {
+              "type": "string",
+              "enum": [
+                "H1-B",
+                "L-1A",
+                "L-1B",
+                "O-1",
+                "TN-1",
+                "E-3",
+                "Schengen_Blue_Card",
+                "Subclass_482",
+                "Not_Applicable"
+              ]
+            },
+            "visa_number_encrypted": {
+              "type": "string"
+            },
+            "issue_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "expiration_date": {
+              "type": "string",
+              "format": "date"
+            },
+            "sponsor_legal_entity": {
+              "type": "string",
+              "description": "Name of the corporate subsidiary sponsoring the visa."
+            }
+          }
+        },
+        "sponsorship_lifecycle": {
+          "type": "object",
+          "required": [
+            "current_stage",
+            "attorney_firm_assigned",
+            "next_critical_deadline",
+            "permanent_residency_process"
+          ],
+          "properties": {
+            "current_stage": {
+              "type": "string",
+              "enum": [
+                "Not_Needed",
+                "LCA_Preparation",
+                "LCA_Filed",
+                "Petition_Preparation",
+                "I-129_Filed",
+                "RFE_Issued",
+                "Approved_Consular_Processing",
+                "Visa_Issued",
+                "Renewal_Preparation"
+              ]
+            },
+            "attorney_firm_assigned": {
+              "type": "string"
+            },
+            "next_critical_deadline": {
+              "type": "string",
+              "format": "date"
+            },
+            "permanent_residency_process": {
+              "type": "object",
+              "required": [
+                "is_initiated",
+                "perm_filing_date",
+                "i140_status",
+                "i485_status",
+                "priority_date"
+              ],
+              "properties": {
+                "is_initiated": {
+                  "type": "boolean"
+                },
+                "perm_filing_date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "i140_status": {
+                  "type": "string",
+                  "enum": [
+                    "Not_Applicable",
+                    "Preparing",
+                    "Filed_Pending",
+                    "Approved",
+                    "RFE",
+                    "Denied"
+                  ]
+                },
+                "i485_status": {
+                  "type": "string",
+                  "enum": [
+                    "Not_Applicable",
+                    "Preparing",
+                    "Filed_Pending",
+                    "Approved",
+                    "RFE",
+                    "Denied"
+                  ]
+                },
+                "priority_date": {
+                  "type": "string",
+                  "format": "date"
+                }
+              }
+            }
+          }
+        },
+        "compliance_documentation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "document_type",
+              "verified_date",
+              "valid_until",
+              "inspector_user_id"
+            ],
+            "properties": {
+              "document_type": {
+                "type": "string",
+                "enum": [
+                  "I-9",
+                  "Form_I-20",
+                  "DS-2019",
+                  "E-Verify_Receipt",
+                  "Right_To_Work_Checklist"
+                ]
+              },
+              "verified_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "valid_until": {
+                "type": "string",
+                "format": "date"
+              },
+              "inspector_user_id": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "career_and_learning_development": {
+      "type": "object",
+      "description": "Learning path assignments, professional certifications, corporate-sponsored course tracking, and training budget allocation.",
+      "required": [
+        "assigned_learning_paths",
+        "earned_certifications",
+        "course_enrollments",
+        "training_allowance_ledger"
+      ],
+      "properties": {
+        "assigned_learning_paths": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path_id",
+              "path_title",
+              "target_job_profile_ref",
+              "progress_percentage"
+            ],
+            "properties": {
+              "path_id": {
+                "type": "string"
+              },
+              "path_title": {
+                "type": "string"
+              },
+              "target_job_profile_ref": {
+                "type": "string",
+                "description": "Links to competency profile models."
+              },
+              "progress_percentage": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              }
+            }
+          }
+        },
+        "earned_certifications": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "certification_name",
+              "issuing_authority",
+              "credential_id",
+              "acquired_date",
+              "expires_date",
+              "reimbursement_status"
+            ],
+            "properties": {
+              "certification_name": {
+                "type": "string"
+              },
+              "issuing_authority": {
+                "type": "string"
+              },
+              "credential_id": {
+                "type": "string"
+              },
+              "acquired_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "expires_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "reimbursement_status": {
+                "type": "string",
+                "enum": [
+                  "Not_Requested",
+                  "Pending_Approval",
+                  "Reimbursed",
+                  "Rejected"
+                ]
+              }
+            }
+          }
+        },
+        "course_enrollments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "course_id",
+              "course_title",
+              "provider",
+              "status",
+              "hours_logged",
+              "completion_date"
+            ],
+            "properties": {
+              "course_id": {
+                "type": "string"
+              },
+              "course_title": {
+                "type": "string"
+              },
+              "provider": {
+                "type": "string",
+                "enum": [
+                  "Internal_LMS",
+                  "Coursera_For_Business",
+                  "LinkedIn_Learning",
+                  "Pluralsight",
+                  "External_Vendor"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "Assigned",
+                  "In_Progress",
+                  "Completed",
+                  "Overdue"
+                ]
+              },
+              "hours_logged": {
+                "type": "number"
+              },
+              "completion_date": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          }
+        },
+        "training_allowance_ledger": {
+          "type": "object",
+          "required": [
+            "fiscal_year",
+            "allocated_amount",
+            "spent_amount",
+            "pending_approval_claims"
+          ],
+          "properties": {
+            "fiscal_year": {
+              "type": "integer"
+            },
+            "allocated_amount": {
+              "type": "number"
+            },
+            "spent_amount": {
+              "type": "number"
+            },
+            "pending_approval_claims": {
+              "type": "number"
+            }
+          }
+        }
+      }
+    },
+    "disciplinary_and_grievance_records": {
+      "type": "object",
+      "description": "Maintains restricted-access records of disciplinary incidents, HR investigations, grievances filed, mediation sessions, and appeal logs.",
+      "required": [
+        "disciplinary_actions",
+        "grievances_filed"
+      ],
+      "properties": {
+        "disciplinary_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "action_id",
+              "incident_date",
+              "investigation_status",
+              "severity_tier",
+              "allegations_details_encrypted",
+              "action_taken",
+              "remediation_plan",
+              "appealed",
+              "sign_off_logs"
+            ],
+            "properties": {
+              "action_id": {
+                "type": "string",
+                "pattern": "^DIS-\\d{4}-\\d{5}$"
+              },
+              "incident_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "investigation_status": {
+                "type": "string",
+                "enum": [
+                  "Reported",
+                  "Under_Investigation",
+                  "Substantiated",
+                  "Unsubstantiated",
+                  "Closed"
+                ]
+              },
+              "severity_tier": {
+                "type": "string",
+                "enum": [
+                  "Low",
+                  "Medium",
+                  "High",
+                  "Critical"
+                ]
+              },
+              "allegations_details_encrypted": {
+                "type": "string",
+                "description": "Highly encrypted description of the policy violation."
+              },
+              "action_taken": {
+                "type": "string",
+                "enum": [
+                  "Verbal_Warning",
+                  "Written_Warning",
+                  "Final_Written_Warning",
+                  "Suspension",
+                  "Demotion",
+                  "Termination",
+                  "No_Action_Taken"
+                ]
+              },
+              "remediation_plan": {
+                "type": "object",
+                "properties": {
+                  "required_trainings": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "review_frequency_weeks": {
+                    "type": "integer"
+                  },
+                  "duration_days": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "appealed": {
+                "type": "object",
+                "required": [
+                  "is_appealed",
+                  "appeal_date",
+                  "appeal_grounds",
+                  "appeal_status",
+                  "final_decision"
+                ],
+                "properties": {
+                  "is_appealed": {
+                    "type": "boolean"
+                  },
+                  "appeal_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "appeal_grounds": {
+                    "type": "string"
+                  },
+                  "appeal_status": {
+                    "type": "string",
+                    "enum": [
+                      "Pending_Review",
+                      "Upheld",
+                      "Overturned",
+                      "Mitigated",
+                      "Not_Applicable"
+                    ]
+                  },
+                  "final_decision": {
+                    "type": "string"
+                  }
+                }
+              },
+              "sign_off_logs": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "role",
+                    "user_id",
+                    "timestamp"
+                  ],
+                  "properties": {
+                    "role": {
+                      "type": "string",
+                      "enum": [
+                        "HR_BP",
+                        "Employee",
+                        "Legal_Counsel",
+                        "Manager"
+                      ]
+                    },
+                    "user_id": {
+                      "type": "string"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "grievances_filed": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "grievance_id",
+              "filing_date",
+              "subject_category",
+              "allegation_statement_encrypted",
+              "assigned_mediator_id",
+              "resolution_stage",
+              "mediation_outcome"
+            ],
+            "properties": {
+              "grievance_id": {
+                "type": "string",
+                "pattern": "^GRV-\\d{4}-\\d{5}$"
+              },
+              "filing_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "subject_category": {
+                "type": "string",
+                "enum": [
+                  "Harassment",
+                  "Discrimination",
+                  "Retaliation",
+                  "Wage_Dispute",
+                  "Unfair_Treatment",
+                  "Working_Conditions",
+                  "Other"
+                ]
+              },
+              "allegation_statement_encrypted": {
+                "type": "string"
+              },
+              "assigned_mediator_id": {
+                "type": "string"
+              },
+              "resolution_stage": {
+                "type": "string",
+                "enum": [
+                  "Filed",
+                  "Review_Pending",
+                  "Mediation_Ongoing",
+                  "Escalated_To_Arbitration",
+                  "Resolved",
+                  "Withdrawn"
+                ]
+              },
+              "mediation_outcome": {
+                "type": "object",
+                "properties": {
+                  "agreed_resolution_summary_encrypted": {
+                    "type": "string"
+                  },
+                  "resolution_signoff_date": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

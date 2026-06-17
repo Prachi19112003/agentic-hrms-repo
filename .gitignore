@@ -1,0 +1,10 @@
+# Local environment variable configuration
+.env
+
+# Python byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Log files and database runtime artifacts
+*.log
