@@ -657,11 +657,13 @@
                   "Wellness",
                   "Car_Allowance",
                   "Remote_Work",
-                  "Educational_Assistance"
+                  "Educational_Assistance",
+                  "Gym_Membership"
                 ]
               },
               "amount": {
-                "type": "number"
+                "type": "number",
+                "description": "For Gym_Membership, this represents the monthly limit."
               },
               "taxable": {
                 "type": "boolean"
@@ -674,6 +676,10 @@
                   "Annual",
                   "One_Time"
                 ]
+              },
+              "provider_name": {
+                "type": "string",
+                "description": "Name of the provider, e.g., gym name for Gym_Membership reimbursement."
               }
             }
           }
