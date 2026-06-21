@@ -6,11 +6,11 @@ import urllib.request
 import urllib.error
 import subprocess
 
-# Ensure UTF-8 stream output for console interfaces (resolves Windows encoding issues)
+
 if sys.platform.startswith("win"):
     sys.stdout.reconfigure(encoding="utf-8")
 
-# Configure professional enterprise logging format
+
 logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s] [%(levelname)s] [%(filename)s:%(lineno)d]: %(message)s",
@@ -19,26 +19,26 @@ logging.basicConfig(
 logger = logging.getLogger("HRMSWorkflow")
 
 
-def load_dotenv(dotenv_path: str = ".env") -> None:
+def load_dotenv(dotenv_path: str = ".env")->None:
     """Reads a .env file and sets environment variables if present, without external dependencies."""
     if os.path.exists(dotenv_path):
         try:
             with open(dotenv_path, "r", encoding="utf-8") as f:
                 for line in f:
-                    line = line.strip()
+                    line=line.strip()
                     if not line or line.startswith("#"):
                         continue
                     if "=" in line:
-                        key, val = line.split("=", 1)
-                        key = key.strip()
-                        val = val.strip()
-                        # Strip standard quotes if wrapped
-                        if val.startswith(('"', "'")) and val.endswith(('"', "'")) and len(val) >= 2:
-                            val = val[1:-1]
-                        # Strip angle brackets if wrapped as a placeholder (e.g. <KEY>)
-                        if val.startswith("<") and val.endswith(">") and len(val) >= 2:
-                            val = val[1:-1]
-                        os.environ[key] = val
+                        key, val=line.split("=", 1)
+                        key=key.strip()
+                        val=val.strip()
+                        
+                        if val.startswith(('"', "'")) and val.endswith(('"', "'")) and len(val)>=2:
+                            val=val[1:-1]
+                        
+                        if val.startswith("<") and val.endswith(">") and len(val)>=2:
+                            val=val[1:-1]
+                        os.environ[key]=val
             logger.info("Loaded environment variables from local '%s' file.", dotenv_path)
         except Exception as e:
             logger.warning("Could not read '%s' file: %s", dotenv_path, str(e))
@@ -47,33 +47,33 @@ def load_dotenv(dotenv_path: str = ".env") -> None:
 class ResponseWrapper:
     """Wrapper class mimicking the JavaScript fetch response object."""
     def __init__(self, status: int, headers: dict, body: str):
-        self.status = status
-        self.headers = headers
-        self.body_str = body
+        self.status=status
+        self.headers=headers
+        self.body_str=body
 
-    def json(self) -> dict:
+    def json(self)->dict:
         return json.loads(self.body_str)
 
-    def text(self) -> str:
+    def text(self)->str:
         return self.body_str
 
 
-def fetch(url: str, headers: dict = None, body: dict = None, method: str = "POST") -> ResponseWrapper:
+def fetch(url: str, headers: dict=None, body: dict=None, method: str="POST")->ResponseWrapper:
     """Standard-library wrapper mimicking Javascript fetch() to avoid external HTTP dependencies."""
-    headers = headers or {}
-    data = None
+    headers=headers or {}
+    data=None
     
     if body is not None:
         if isinstance(body, dict):
-            data = json.dumps(body).encode("utf-8")
+            data=json.dumps(body).encode("utf-8")
             if "content-type" not in {k.lower() for k in headers}:
-                headers["Content-Type"] = "application/json"
+                headers["Content-Type"]="application/json"
         elif isinstance(body, str):
-            data = body.encode("utf-8")
+            data=body.encode("utf-8")
         else:
-            data = body
+            data=body
             
-    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+    req=urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
         with urllib.request.urlopen(req) as response:
             status = response.status
@@ -81,46 +81,46 @@ def fetch(url: str, headers: dict = None, body: dict = None, method: str = "POST
             res_body = response.read().decode("utf-8")
             return ResponseWrapper(status, res_headers, res_body)
     except urllib.error.HTTPError as e:
-        status = e.code
-        res_headers = dict(e.info())
-        res_body = e.read().decode("utf-8")
+        status=e.code
+        res_headers=dict(e.info())
+        res_body=e.read().decode("utf-8")
         return ResponseWrapper(status, res_headers, res_body)
     except urllib.error.URLError as e:
         raise RuntimeError(f"Network Connection Error: {e.reason}")
 
 
-def clean_json_response(content: str) -> str:
+def clean_json_response(content: str)->str:
     """Strips markdown code blocks and excess whitespace from LLM text output."""
-    content = content.strip()
+    content=content.strip()
     if content.startswith("```"):
-        first_newline = content.find("\n")
-        if first_newline != -1:
-            content = content[first_newline:].strip()
+        first_newline=content.find("\n")
+        if first_newline!=-1:
+            content=content[first_newline:].strip()
         if content.endswith("```"):
-            content = content[:-3].strip()
+            content=content[:-3].strip()
     return content
 
 
-def mock_test_and_validate(file_path: str, min_complex_fields: int = 5) -> tuple[bool, str]:
+def mock_test_and_validate(file_path: str, min_complex_fields: int = 5)->tuple[bool, str]:
     """Reads the JSON model file and validates its structural complexity and syntax.
     
     Compatible with both raw data documents and JSON Schema (Draft-07) formats.
     """
     try:
         with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+            data=json.load(f)
         
         if not data:
             return False, "Validation Error: The schema file is empty."
         
-        # Check if the file is a JSON Schema definition
-        is_schema = "$schema" in data or "properties" in data
-        target_dict = data.get("properties", data) if is_schema else data
         
-        # Count complex objects (nested dictionaries or arrays of objects)
-        complex_count = sum(1 for v in target_dict.values() if isinstance(v, (dict, list)))
+        is_schema="$schema" in data or "properties" in data
+        target_dict=data.get("properties", data) if is_schema else data
         
-        if complex_count < min_complex_fields:
+        
+        complex_count=sum(1 for v in target_dict.values() if isinstance(v, (dict, list)))
+        
+        if complex_count<min_complex_fields:
             return (
                 False,
                 f"Validation Error: Found {complex_count} complex fields, "
@@ -137,13 +137,13 @@ def mock_test_and_validate(file_path: str, min_complex_fields: int = 5) -> tuple
         return False, f"Unexpected Validation Failure: {str(e)}"
 
 
-def auto_git_commit_and_push(user_requirement: str, file_path: str = "employee_model.json") -> None:
+def auto_git_commit_and_push(user_requirement: str, file_path: str="employee_model.json")->None:
     """Stages, commits, and pushes the updated schema file automatically."""
     logger.info("Starting automated Git commit and push pipeline...")
     
-    # 1. Stage the modified schema file
+    
     try:
-        add_res = subprocess.run(
+        add_res=subprocess.run(
             ["git", "add", file_path],
             capture_output=True,
             text=True,
@@ -154,10 +154,10 @@ def auto_git_commit_and_push(user_requirement: str, file_path: str = "employee_m
         logger.error("Git add failed: %s (stderr: %s)", str(ce), ce.stderr.strip())
         return
 
-    # 2. Commit the file with a dynamic description
-    commit_message = f"feat: auto-update schema - {user_requirement}"
+   
+    commit_message=f"feat: auto-update schema - {user_requirement}"
     try:
-        commit_res = subprocess.run(
+        commit_res=subprocess.run(
             ["git", "commit", "-m", commit_message],
             capture_output=True,
             text=True,
@@ -165,9 +165,9 @@ def auto_git_commit_and_push(user_requirement: str, file_path: str = "employee_m
         )
         logger.info("Git commit output: %s", commit_res.stdout.strip())
     except subprocess.CalledProcessError as ce:
-        # Check if it failed because there's nothing to commit
-        stderr_msg = ce.stderr.lower()
-        stdout_msg = ce.stdout.lower()
+       
+        stderr_msg=ce.stderr.lower()
+        stdout_msg=ce.stdout.lower()
         if "nothing to commit" in stderr_msg or "nothing to commit" in stdout_msg or \
            "no changes added to commit" in stderr_msg or "no changes added to commit" in stdout_msg:
             logger.info("No modifications detected. Nothing to commit.")
@@ -175,9 +175,9 @@ def auto_git_commit_and_push(user_requirement: str, file_path: str = "employee_m
             logger.error("Git commit failed: %s (stderr: %s)", str(ce), ce.stderr.strip())
             return
 
-    # 3. Push to remote repository
+    
     try:
-        push_res = subprocess.run(
+        push_res=subprocess.run(
             ["git", "push", "origin", "master"],
             capture_output=True,
             text=True,
@@ -185,21 +185,21 @@ def auto_git_commit_and_push(user_requirement: str, file_path: str = "employee_m
         )
         logger.info("Git push output: %s", push_res.stdout.strip() or "Pushed changes successfully.")
     except subprocess.CalledProcessError as ce:
-        # Log error but do not crash the script, as requested
+        
         logger.error(
             "Git push failed but local changes are preserved. "
             "Error details: %s (stderr: %s)", str(ce), ce.stderr.strip()
         )
 
 
-def run_agentic_workflow(user_requirement: str, file_path: str = "employee_model.json") -> None:
+def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.json")->None:
     """Executes the self-healing schema-generation loop using Google Gemini API."""
     logger.info("Starting Agentic Workflow for requirement: '%s'\n", user_requirement)
     
-    # Load environment variables from local .env config
+    
     load_dotenv()
     
-    # 1. Read the existing employee_model.json file
+    
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             existing_schema_content = f.read()
@@ -207,8 +207,8 @@ def run_agentic_workflow(user_requirement: str, file_path: str = "employee_model
         logger.warning("Target schema file '%s' not found. Initializing new schema.", file_path)
         existing_schema_content = "{}"
 
-    # Verify Gemini API key availability
-    api_key = os.environ.get("GEMINI_API_KEY")
+    
+    api_key=os.environ.get("GEMINI_API_KEY")
     if not api_key:
         logger.error(
             "Missing environment variable: GEMINI_API_KEY. "
@@ -216,8 +216,8 @@ def run_agentic_workflow(user_requirement: str, file_path: str = "employee_model
         )
         sys.exit(1)
 
-    # Initialize chat contents for Gemini API
-    contents = [
+    
+    contents=[
         {
             "role": "user",
             "parts": [
@@ -228,11 +228,11 @@ def run_agentic_workflow(user_requirement: str, file_path: str = "employee_model
         }
     ]
 
-    attempts = 1
-    max_attempts = 3
-    success = False
+    attempts=1
+    max_attempts=3
+    success=False
 
-    while attempts <= max_attempts:
+    while attempts<=max_attempts:
         logger.info("--- Attempt %d: Sending request to Google Gemini ---", attempts)
         
         payload = {
@@ -253,35 +253,35 @@ def run_agentic_workflow(user_requirement: str, file_path: str = "employee_model
             "Content-Type": "application/json"
         }
         
-        # Endpoint URL with API key passed as query parameter
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+        
+        url=f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
         
         try:
-            # 2. Call Gemini API using fetch()
-            resp = fetch(url, headers=headers, body=payload)
+           
+            resp=fetch(url, headers=headers, body=payload)
             
-            if resp.status != 200:
+            if resp.status!=200:
                 logger.error("Gemini API call failed (HTTP %d): %s", resp.status, resp.text())
                 raise RuntimeError(f"Gemini API error (HTTP {resp.status}): {resp.text()}")
             
-            resp_json = resp.json()
+            resp_json=resp.json()
             
-            # Extract content from response structure
+            
             try:
-                raw_assistant_response = resp_json["candidates"][0]["content"]["parts"][0]["text"]
+                raw_assistant_response=resp_json["candidates"][0]["content"]["parts"][0]["text"]
             except (KeyError, IndexError) as structure_error:
                 logger.error("Unexpected response structure: %s", resp.text())
                 raise RuntimeError(f"Failed to parse Gemini response structure: {str(structure_error)}")
             
-            # Clean potential markdown wrap
-            cleaned_json_str = clean_json_response(raw_assistant_response)
+          
+            cleaned_json_str=clean_json_response(raw_assistant_response)
             
-            # 4. Save the updated schema back to employee_model.json
+            
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(cleaned_json_str)
             
-            # 5. Validate the updated file
-            valid, message = mock_test_and_validate(file_path)
+            
+            valid, message=mock_test_and_validate(file_path)
             
             if valid:
                 logger.info("Success: %s", message)
@@ -291,7 +291,7 @@ def run_agentic_workflow(user_requirement: str, file_path: str = "employee_model
                 break
             else:
                 logger.warning("Validation Failed on Attempt %d: %s", attempts, message)
-                # 6. If validation fails, append model's response and user's error message, then retry
+               
                 contents.append({
                     "role": "model",
                     "parts": [{"text": raw_assistant_response}]
@@ -304,21 +304,21 @@ def run_agentic_workflow(user_requirement: str, file_path: str = "employee_model
                         }
                     ]
                 })
-                attempts += 1
+                attempts+=1
                 
         except Exception as e:
             logger.error("Exception during agent execution on Attempt %d: %s", attempts, str(e))
-            attempts += 1
+            attempts+=1
             
     if not success:
         logger.error("Workflow stopped: Maximum self-healing attempts reached. Manual review needed.")
         sys.exit(1)
 
 
-# Test execution
-if __name__ == "__main__":
+
+if __name__=="__main__":
     try:
-        user_requirement = input("Enter your natural language schema update requirement: ").strip()
+        user_requirement=input("Enter your natural language schema update requirement: ").strip()
         if not user_requirement:
             logger.error("No requirement entered. Exiting.")
             sys.exit(1)
