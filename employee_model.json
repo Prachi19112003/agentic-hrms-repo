@@ -18,7 +18,8 @@
     "time_and_attendance",
     "work_authorization_visa",
     "career_and_learning_development",
-    "disciplinary_and_grievance_records"
+    "disciplinary_and_grievance_records",
+    "desk_allocation"
   ],
   "properties": {
     "employee_id": {
@@ -2010,6 +2011,50 @@
         "assigned_parking_zone": {
           "type": "string",
           "description": "The specific parking zone or area assigned to the employee."
+        }
+      }
+    },
+    "desk_allocation": {
+      "type": "object",
+      "description": "Details regarding employee desk allocation within the office.",
+      "required": [
+        "desk_id",
+        "building_name",
+        "floor_number",
+        "is_assigned"
+      ],
+      "properties": {
+        "desk_id": {
+          "type": "string",
+          "pattern": "^DESK-[A-Z0-9]{3,}-\\d{3,}$",
+          "description": "Unique identifier for the allocated desk (e.g., DESK-BLDG1-FLR3-D045)."
+        },
+        "building_name": {
+          "type": "string",
+          "description": "Name or identifier of the building where the desk is located."
+        },
+        "floor_number": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Floor number where the desk is situated."
+        },
+        "zone_identifier": {
+          "type": "string",
+          "description": "Specific zone or area within the floor (e.g., 'West Wing', 'Open Space A')."
+        },
+        "is_assigned": {
+          "type": "boolean",
+          "description": "Indicates if the desk is currently assigned to this employee."
+        },
+        "assignment_start_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when the desk assignment started."
+        },
+        "assignment_end_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when the desk assignment is scheduled to end (null if permanent or indefinite)."
         }
       }
     },
