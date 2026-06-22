@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic HRMS Schema Update Dashboard</title>
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-app: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-light: rgba(99, 102, 241, 0.08);
+            --success: #22c55e;
+            --success-light: rgba(34, 197, 94, 0.12);
+            --success-border: rgba(34, 197, 94, 0.3);
+            --border: #e2e8f0;
+            
+            /* Dark theme for code display panels */
+            --code-bg: #0f172a;
+            --code-header-bg: #1e293b;
+            --code-text: #e2e8f0;
+            --code-line-num: #64748b;
+            --code-line-added-bg: rgba(34, 197, 94, 0.15);
+            --code-line-added-border: #22c55e;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius-lg: 12px;
+            --radius-md: 8px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 2.5rem 1.5rem;
+            min-height: 100vh;
+        }
+
+        .dashboard-container {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+        }
+
+        .header-title-area h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.025em;
+            margin-bottom: 0.25rem;
+        }
+
+        .header-title-area p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .badge-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            display: inline-block;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+
+        /* Main Form Card */
+        .input-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+        }
+
+        .input-card:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        .form-label {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.625rem;
+            display: block;
+        }
+
+        .textarea-wrapper {
+            position: relative;
+            margin-bottom: 1.25rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            resize: vertical;
+            outline: none;
+            transition: var(--transition);
+            background-color: var(--bg-app);
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+            background-color: var(--bg-card);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .submit-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .submit-btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            background-color: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.7;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Panels Container */
+        .panels-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            position: relative;
+        }
+
+        @media (min-width: 960px) {
+            .panels-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .panel-card {
+            background-color: var(--code-bg);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--code-header-bg);
+        }
+
+        .panel-header {
+            background-color: var(--code-header-bg);
+            padding: 0.875rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .panel-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #94a3b8;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-badge {
+            font-size: 0.75rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .panel-badge.before {
+            background-color: rgba(244, 63, 94, 0.15);
+            color: #f43f5e;
+        }
+
+        .panel-badge.after {
+            background-color: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .code-wrapper {
+            overflow: auto;
+            flex-grow: 1;
+            max-height: 550px;
+            min-height: 350px;
+            padding: 1.25rem 0;
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 0.8125rem;
+            line-height: 1.6;
+            color: var(--code-text);
+        }
+
+        /* Custom Scrollbar for Code Panel */
+        .code-wrapper::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .code-wrapper::-webkit-scrollbar-track {
+            background: var(--code-bg);
+        }
+
+        .code-wrapper::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        .code-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Line formatting in Code block */
+        .code-line {
+            display: flex;
+            width: 100%;
+            padding-right: 1.25rem;
+        }
+
+        .line-number {
+            width: 3.5rem;
+            min-width: 3.5rem;
+            text-align: right;
+            padding-right: 1.25rem;
+            color: var(--code-line-num);
+            user-select: none;
+            border-right: 1px solid #1e293b;
+            margin-right: 1rem;
+        }
+
+        .line-content {
+            white-space: pre;
+            flex-grow: 1;
+        }
+
+        .code-line.added {
+            background-color: var(--code-line-added-bg);
+            border-left: 3px solid var(--code-line-added-border);
+        }
+
+        .code-line.added .line-number {
+            margin-left: -3px; /* Offset the 3px left border */
+            color: rgba(34, 197, 94, 0.6);
+        }
+
+        /* Overlay Spinner on panels container when processing */
+        .overlay-loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(248, 250, 252, 0.7);
+            z-index: 10;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1rem;
+            backdrop-filter: blur(2px);
+            border-radius: var(--radius-lg);
+        }
+
+        .overlay-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        .overlay-text {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header>
+            <div class="header-title-area">
+                <h1>HRMS Schema Update Interface</h1>
+                <p>AI-driven model updates with automated validation & version control</p>
+            </div>
+            <div class="badge-container">
+                <div class="status-badge">
+                    <span class="status-dot"></span>
+                    <span>Ready</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Input Area Card -->
+        <section class="input-card">
+            <label for="requirement-input" class="form-label">Schema Update Requirement</label>
+            <div class="textarea-wrapper">
+                <textarea id="requirement-input" placeholder="e.g. Add a field for tracking employee laptop allocation including asset tag, model name, and issue date"></textarea>
+            </div>
+            <button id="run-btn" class="submit-btn">
+                <span class="spinner" id="btn-spinner"></span>
+                <span id="btn-text">Execute Workflow</span>
+            </button>
+        </section>
+
+        <!-- Code Panels View -->
+        <div style="position: relative;">
+            <!-- Overlay loader -->
+            <div id="overlay-loader" class="overlay-loader">
+                <div class="overlay-spinner"></div>
+                <div class="overlay-text">AI Agent executing workflow...</div>
+            </div>
+
+            <section class="panels-container">
+                <!-- Before Panel -->
+                <div class="panel-card">
+                    <div class="panel-header">
+                        <div class="panel-title">Before Schema</div>
+                        <span class="panel-badge before">employee_model.json</span>
+                    </div>
+                    <div id="before-code" class="code-wrapper"></div>
+                </div>
+
+                <!-- After Panel -->
+                <div class="panel-card">
+                    <div class="panel-header">
+                        <div class="panel-title">After Schema</div>
+                        <span class="panel-badge after">employee_model.json</span>
+                    </div>
+                    <div id="after-code" class="code-wrapper"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Mock Schema data for demo setup
+        const mockBeforeSchema = {
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EmployeeProfile",
+  "type": "object",
+  "required": [
+    "employee_id",
+    "personal_details"
+  ],
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "pattern": "^EMP-[A-Z]{3}-\\d{5}$"
+    },
+    "personal_details": {
+      "type": "object",
+      "required": [
+        "first_name",
+        "last_name"
+      ],
+      "properties": {
+        "first_name": {
+          "type": "string"
+        },
+        "last_name": {
+          "type": "string"
+        }
+      }
+    }
+  }
+};
+
+        const mockAfterSchema = {
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EmployeeProfile",
+  "type": "object",
+  "required": [
+    "employee_id",
+    "personal_details",
+    "laptop_allocation"
+  ],
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "pattern": "^EMP-[A-Z]{3}-\\d{5}$"
+    },
+    "personal_details": {
+      "type": "object",
+      "required": [
+        "first_name",
+        "last_name"
+      ],
+      "properties": {
+        "first_name": {
+          "type": "string"
+        },
+        "last_name": {
+          "type": "string"
+        }
+      }
+    },
+    "laptop_allocation": {
+      "type": "object",
+      "required": [
+        "asset_tag",
+        "model_name",
+        "issue_date"
+      ],
+      "properties": {
+        "asset_tag": {
+          "type": "string",
+          "description": "Unique corporate asset tag."
+        },
+        "model_name": {
+          "type": "string",
+          "description": "Manufacturer model designation."
+        },
+        "issue_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date the laptop was assigned."
+        }
+      }
+    }
+  }
+};
+
+        // DOM elements
+        const beforeContainer = document.getElementById('before-code');
+        const afterContainer = document.getElementById('after-code');
+        const requirementInput = document.getElementById('requirement-input');
+        const runBtn = document.getElementById('run-btn');
+        const btnSpinner = document.getElementById('btn-spinner');
+        const btnText = document.getElementById('btn-text');
+        const overlayLoader = document.getElementById('overlay-loader');
+
+        // Helper to escape HTML characters
+        function escapeHtml(str) {
+            return str.replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;')
+                      .replace(/"/g, '&quot;')
+                      .replace(/'/g, '&#039;');
+        }
+
+        // Render code panel line-by-line
+        function renderCode(text, container) {
+            container.innerHTML = '';
+            const lines = text.split('\n');
+            lines.forEach((line, index) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'code-line';
+                
+                const numSpan = document.createElement('span');
+                numSpan.className = 'line-number';
+                numSpan.textContent = index + 1;
+                
+                const contentSpan = document.createElement('span');
+                contentSpan.className = 'line-content';
+                contentSpan.textContent = line;
+                
+                lineDiv.appendChild(numSpan);
+                lineDiv.appendChild(contentSpan);
+                container.appendChild(lineDiv);
+            });
+        }
+
+        // Diff rendering: highlights lines added to 'after' that don't exist in 'before'
+        function renderDiff(beforeText, afterText, container) {
+            container.innerHTML = '';
+            const beforeLines = beforeText.split('\n');
+            const afterLines = afterText.split('\n');
+            
+            // Build a set of trimmed lines in 'before' for easy lookup
+            const beforeSet = new Set(beforeLines.map(l => l.trim()));
+            
+            afterLines.forEach((line, index) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'code-line';
+                
+                const trimmed = line.trim();
+                // If the line is non-empty and doesn't exist in before, mark it as added
+                if (trimmed && trimmed !== '}' && trimmed !== '],' && !beforeSet.has(trimmed)) {
+                    lineDiv.classList.add('added');
+                }
+                
+                const numSpan = document.createElement('span');
+                numSpan.className = 'line-number';
+                numSpan.textContent = index + 1;
+                
+                const contentSpan = document.createElement('span');
+                contentSpan.className = 'line-content';
+                contentSpan.textContent = line;
+                
+                lineDiv.appendChild(numSpan);
+                lineDiv.appendChild(contentSpan);
+                container.appendChild(lineDiv);
+            });
+        }
+
+        // Initialize UI with initial schemas
+        const beforeJsonStr = JSON.stringify(mockBeforeSchema, null, 2);
+        renderCode(beforeJsonStr, beforeContainer);
+        renderCode(beforeJsonStr, afterContainer); // Initially "after" is the same as "before"
+
+        // Handle Click Event (Mocking backend execution)
+        runBtn.addEventListener('click', () => {
+            const reqText = requirementInput.value.trim();
+            if (!reqText) {
+                alert('Please enter a natural language schema requirement.');
+                return;
+            }
+
+            // Disable button, show spinners
+            runBtn.disabled = true;
+            btnSpinner.style.display = 'block';
+            btnText.textContent = 'Processing...';
+            overlayLoader.style.display = 'flex';
+
+            // Simulate backend run (2 seconds)
+            setTimeout(() => {
+                const afterJsonStr = JSON.stringify(mockAfterSchema, null, 2);
+                
+                // Show updated code in right panel with highlights
+                renderDiff(beforeJsonStr, afterJsonStr, afterContainer);
+
+                // Enable button, hide spinners
+                runBtn.disabled = false;
+                btnSpinner.style.display = 'none';
+                btnText.textContent = 'Execute Workflow';
+                overlayLoader.style.display = 'none';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>

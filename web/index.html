@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic HRMS Schema Update Dashboard</title>
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-app: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --primary-light: rgba(99, 102, 241, 0.08);
+            --success: #22c55e;
+            --success-light: rgba(34, 197, 94, 0.12);
+            --success-border: rgba(34, 197, 94, 0.3);
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --danger-light: rgba(239, 68, 68, 0.08);
+            --danger-border: rgba(239, 68, 68, 0.3);
+            
+            /* Dark theme for code display panels */
+            --code-bg: #0f172a;
+            --code-header-bg: #1e293b;
+            --code-text: #e2e8f0;
+            --code-line-num: #64748b;
+            --code-line-added-bg: rgba(34, 197, 94, 0.15);
+            --code-line-added-border: #22c55e;
+            
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius-lg: 12px;
+            --radius-md: 8px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 2.5rem 1.5rem;
+            min-height: 100vh;
+        }
+
+        .dashboard-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+        }
+
+        .header-title-area h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.025em;
+            margin-bottom: 0.25rem;
+        }
+
+        .header-title-area p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .badge-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            display: inline-block;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0 { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+
+        /* Error/Info Alert Banner */
+        .alert-banner {
+            border-radius: var(--radius-md);
+            padding: 1rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: none;
+            align-items: flex-start;
+            gap: 0.75rem;
+            border: 1px solid transparent;
+        }
+
+        .alert-banner.error {
+            background-color: var(--danger-light);
+            color: var(--danger);
+            border-color: var(--danger-border);
+            display: flex;
+        }
+
+        .alert-banner.success {
+            background-color: var(--success-light);
+            color: var(--success);
+            border-color: var(--success-border);
+            display: flex;
+        }
+
+        /* Main Form Card */
+        .input-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+        }
+
+        .input-card:hover {
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        .form-label {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.625rem;
+            display: block;
+        }
+
+        .textarea-wrapper {
+            position: relative;
+            margin-bottom: 1.25rem;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            resize: vertical;
+            outline: none;
+            transition: var(--transition);
+            background-color: var(--bg-app);
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+            background-color: var(--bg-card);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .submit-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 0.75rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .submit-btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .submit-btn:disabled {
+            background-color: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.7;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Panels Container */
+        .panels-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            position: relative;
+        }
+
+        @media (min-width: 960px) {
+            .panels-container {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .panel-card {
+            background-color: var(--code-bg);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--code-header-bg);
+        }
+
+        .panel-card.error-state {
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .panel-header {
+            background-color: var(--code-header-bg);
+            padding: 0.875rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .panel-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #94a3b8;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-badge {
+            font-size: 0.75rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .panel-badge.before {
+            background-color: rgba(244, 63, 94, 0.15);
+            color: #f43f5e;
+        }
+
+        .panel-badge.after {
+            background-color: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+        }
+
+        .code-wrapper {
+            overflow: auto;
+            flex-grow: 1;
+            max-height: 550px;
+            min-height: 250px;
+            padding: 1.25rem 0;
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 0.8125rem;
+            line-height: 1.6;
+            color: var(--code-text);
+        }
+
+        /* Custom Scrollbar for Code Panel */
+        .code-wrapper::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .code-wrapper::-webkit-scrollbar-track {
+            background: var(--code-bg);
+        }
+
+        .code-wrapper::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        .code-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Line formatting in Code block */
+        .code-line {
+            display: flex;
+            width: 100%;
+            padding-right: 1.25rem;
+        }
+
+        .line-number {
+            width: 3.5rem;
+            min-width: 3.5rem;
+            text-align: right;
+            padding-right: 1.25rem;
+            color: var(--code-line-num);
+            user-select: none;
+            border-right: 1px solid #1e293b;
+            margin-right: 1rem;
+        }
+
+        .line-content {
+            white-space: pre;
+            flex-grow: 1;
+        }
+
+        .code-line.added {
+            background-color: var(--code-line-added-bg);
+            border-left: 3px solid var(--code-line-added-border);
+        }
+
+        .code-line.added .line-number {
+            margin-left: -3px; /* Offset the 3px left border */
+            color: rgba(34, 197, 94, 0.6);
+        }
+
+        /* Overlay Spinner on panels container when processing */
+        .overlay-loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(248, 250, 252, 0.7);
+            z-index: 10;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1rem;
+            backdrop-filter: blur(2px);
+            border-radius: var(--radius-lg);
+        }
+
+        .overlay-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        .overlay-text {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* Dynamic Form styles */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (min-width: 640px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .form-field label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: capitalize;
+        }
+        .form-field input {
+            padding: 0.625rem 0.875rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            outline: none;
+            background-color: var(--bg-app);
+            transition: var(--transition);
+        }
+        .form-field input:focus {
+            border-color: var(--primary);
+            background-color: var(--bg-card);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header>
+            <div class="header-title-area">
+                <h1>HRMS Schema Update Interface</h1>
+                <p>AI-driven model updates with automated validation & version control</p>
+            </div>
+            <div class="badge-container">
+                <div class="status-badge">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-text">Loading Schema...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Alert Notification Bar -->
+        <div id="alert-banner" class="alert-banner">
+            <span id="alert-message"></span>
+        </div>
+
+        <!-- Input Area Card -->
+        <section class="input-card">
+            <label for="requirement-input" class="form-label">Schema Update Requirement</label>
+            <div class="textarea-wrapper">
+                <textarea id="requirement-input" placeholder="e.g. Add a field for tracking employee laptop allocation including asset tag, model name, and issue date"></textarea>
+            </div>
+            <button id="run-btn" class="submit-btn" disabled>
+                <span class="spinner" id="btn-spinner"></span>
+                <span id="btn-text">Execute Workflow</span>
+            </button>
+        </section>
+
+        <!-- Code Panels View -->
+        <div style="position: relative;">
+            <!-- Overlay loader -->
+            <div id="overlay-loader" class="overlay-loader">
+                <div class="overlay-spinner"></div>
+                <div class="overlay-text" id="overlay-text">AI Agent executing workflow...</div>
+            </div>
+
+            <section class="panels-container">
+                <!-- Before Panel -->
+                <div class="panel-card">
+                    <div class="panel-header">
+                        <div class="panel-title">Before Field Definition</div>
+                        <span class="panel-badge before">Baseline Block</span>
+                    </div>
+                    <div id="before-code" class="code-wrapper"></div>
+                </div>
+
+                <!-- After Panel -->
+                <div class="panel-card" id="after-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">After Field Definition</div>
+                        <span class="panel-badge after">Added Block</span>
+                    </div>
+                    <div id="after-code" class="code-wrapper"></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Test Constraints Panel -->
+        <section class="input-card" id="test-data-panel" style="display: none;">
+            <h2 class="form-label" id="test-panel-title" style="font-size: 1.1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1.25rem;">Test Data Entry Against Constraints</h2>
+            
+            <div id="test-form-container">
+                <!-- Inputs will be dynamically generated here -->
+            </div>
+            
+            <button id="validate-btn" class="submit-btn">
+                <span>Validate Entry</span>
+            </button>
+
+            <div id="validate-result" class="alert-banner" style="margin-top: 1.25rem;"></div>
+        </section>
+    </div>
+
+    <script>
+        // DOM elements
+        const beforeContainer = document.getElementById('before-code');
+        const afterContainer = document.getElementById('after-code');
+        const afterPanel = document.getElementById('after-panel');
+        const requirementInput = document.getElementById('requirement-input');
+        const runBtn = document.getElementById('run-btn');
+        const btnSpinner = document.getElementById('btn-spinner');
+        const btnText = document.getElementById('btn-text');
+        const overlayLoader = document.getElementById('overlay-loader');
+        const overlayText = document.getElementById('overlay-text');
+        const statusText = document.getElementById('status-text');
+        const statusDot = document.getElementById('status-dot');
+        const alertBanner = document.getElementById('alert-banner');
+        const alertMessage = document.getElementById('alert-message');
+
+        const testDataPanel = document.getElementById('test-data-panel');
+        const testFormContainer = document.getElementById('test-form-container');
+        const validateBtn = document.getElementById('validate-btn');
+        const validateResult = document.getElementById('validate-result');
+
+        let currentSchema = null;
+        let baseApiUrl = '/api/update-schema'; 
+        
+        let activeNewField = '';
+        let activeNewFieldSchema = null;
+
+        // Helper to format error banner displays
+        function showAlert(message, type = 'error') {
+            alertBanner.className = `alert-banner ${type}`;
+            alertMessage.textContent = message;
+            alertBanner.style.display = 'flex';
+        }
+
+        function hideAlert() {
+            alertBanner.style.display = 'none';
+        }
+
+        function hideTestPanel() {
+            testDataPanel.style.display = 'none';
+            activeNewField = '';
+            activeNewFieldSchema = null;
+        }
+
+        // Render code panel line-by-line
+        function renderCode(text, container) {
+            container.innerHTML = '';
+            const lines = text.split('\n');
+            lines.forEach((line, index) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'code-line';
+                
+                const numSpan = document.createElement('span');
+                numSpan.className = 'line-number';
+                numSpan.textContent = index + 1;
+                
+                const contentSpan = document.createElement('span');
+                contentSpan.className = 'line-content';
+                contentSpan.textContent = line;
+                
+                lineDiv.appendChild(numSpan);
+                lineDiv.appendChild(contentSpan);
+                container.appendChild(lineDiv);
+            });
+        }
+
+        // Diff rendering: highlights lines added to 'after' that don't exist in 'before'
+        function renderDiff(beforeText, afterText, container) {
+            container.innerHTML = '';
+            const beforeLines = beforeText.split('\n');
+            const afterLines = afterText.split('\n');
+            
+            const beforeSet = new Set(beforeLines.map(l => l.trim()));
+            
+            afterLines.forEach((line, index) => {
+                const lineDiv = document.createElement('div');
+                lineDiv.className = 'code-line';
+                
+                const trimmed = line.trim();
+                // Highlight non-empty lines that don't exist in before baseline
+                if (trimmed && trimmed !== '}' && trimmed !== '],' && !beforeSet.has(trimmed)) {
+                    lineDiv.classList.add('added');
+                }
+                
+                const numSpan = document.createElement('span');
+                numSpan.className = 'line-number';
+                numSpan.textContent = index + 1;
+                
+                const contentSpan = document.createElement('span');
+                contentSpan.className = 'line-content';
+                contentSpan.textContent = line;
+                
+                lineDiv.appendChild(numSpan);
+                lineDiv.appendChild(contentSpan);
+                container.appendChild(lineDiv);
+            });
+        }
+
+        // Build and display dynamic validation inputs
+        function setupTestPanel() {
+            if (!activeNewField || !activeNewFieldSchema || !activeNewFieldSchema.properties) {
+                hideTestPanel();
+                return;
+            }
+            
+            testFormContainer.innerHTML = '';
+            validateResult.style.display = 'none';
+            
+            const properties = activeNewFieldSchema.properties;
+            const required = activeNewFieldSchema.required || [];
+            
+            const formGrid = document.createElement('div');
+            formGrid.className = 'form-grid';
+            
+            for (const [propName, propVal] of Object.entries(properties)) {
+                const fieldDiv = document.createElement('div');
+                fieldDiv.className = 'form-field';
+                
+                const label = document.createElement('label');
+                // Replace underscores with spaces for clean presentation
+                label.textContent = propName.replace(/_/g, ' ') + (required.includes(propName) ? ' *' : '');
+                label.setAttribute('for', `input-${propName}`);
+                
+                const input = document.createElement('input');
+                input.id = `input-${propName}`;
+                input.name = propName;
+                
+                if (propVal.format === 'date') {
+                    input.type = 'date';
+                } else {
+                    input.type = 'text';
+                }
+                
+                input.placeholder = propVal.description || `Enter ${propName.replace(/_/g, ' ')}...`;
+                input.required = required.includes(propName);
+                
+                fieldDiv.appendChild(label);
+                fieldDiv.appendChild(input);
+                formGrid.appendChild(fieldDiv);
+            }
+            
+            testFormContainer.appendChild(formGrid);
+            
+            document.getElementById('test-panel-title').textContent = `Test Data Constraints: ${activeNewField.replace(/_/g, ' ')}`;
+            testDataPanel.style.display = 'block';
+        }
+
+        // Process schema updates and render only the diff
+        function processAndRenderDiff(before, after) {
+            const beforeProps = before.properties || {};
+            const afterProps = after.properties || {};
+            
+            let changedKey = null;
+            for (const key of Object.keys(afterProps)) {
+                if (!beforeProps[key] || JSON.stringify(beforeProps[key]) !== JSON.stringify(afterProps[key])) {
+                    changedKey = key;
+                    break;
+                }
+            }
+            
+            if (changedKey) {
+                const beforeStr = beforeProps[changedKey] ? JSON.stringify(beforeProps[changedKey], null, 2) : "No existing field";
+                const afterStr = JSON.stringify(afterProps[changedKey], null, 2);
+                
+                renderCode(beforeStr, beforeContainer);
+                renderDiff(beforeStr, afterStr, afterContainer);
+                
+                // Keep references for dynamic test panel
+                activeNewField = changedKey;
+                activeNewFieldSchema = afterProps[changedKey];
+                setupTestPanel();
+            } else {
+                // Fallback: render full files
+                const beforeStr = JSON.stringify(before, null, 2);
+                const afterStr = JSON.stringify(after, null, 2);
+                renderCode(beforeStr, beforeContainer);
+                renderDiff(beforeStr, afterStr, afterContainer);
+                hideTestPanel();
+            }
+        }
+
+        // Fetch current schema on page startup
+        async function initSchema() {
+            try {
+                const response = await fetch(baseApiUrl);
+                if (!response.ok) {
+                    throw new Error(`Failed to load schema from server (HTTP ${response.status})`);
+                }
+                const data = await response.json();
+                if (data.status === 'success') {
+                    currentSchema = data.schema;
+                    
+                    // Show full file initially
+                    const schemaStr = JSON.stringify(currentSchema, null, 2);
+                    renderCode(schemaStr, beforeContainer);
+                    renderCode(schemaStr, afterContainer);
+                    
+                    // Enable page elements
+                    runBtn.disabled = false;
+                    statusText.textContent = 'Schema Loaded';
+                    statusDot.style.boxShadow = '0 0 0 2px rgba(34, 197, 94, 0.4)';
+                    statusDot.style.backgroundColor = 'var(--success)';
+                } else {
+                    throw new Error(data.message || 'Unknown server error loading schema.');
+                }
+            } catch (error) {
+                console.error("Init Error:", error);
+                showAlert(`Startup Error: ${error.message}. Is your local serverless api running?`, 'error');
+                statusText.textContent = 'Connection Error';
+                statusDot.style.backgroundColor = 'var(--danger)';
+                statusDot.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.4)';
+            }
+        }
+
+        // Handle Click Event (Real backend request execution)
+        runBtn.addEventListener('click', async () => {
+            const reqText = requirementInput.value.trim();
+            if (!reqText) {
+                showAlert('Please enter a natural language schema requirement before submitting.', 'error');
+                return;
+            }
+
+            hideAlert();
+            hideTestPanel();
+            afterPanel.classList.remove('error-state');
+            
+            // Disable button, show spinners
+            runBtn.disabled = true;
+            btnSpinner.style.display = 'block';
+            btnText.textContent = 'Processing...';
+            overlayLoader.style.display = 'flex';
+            overlayText.textContent = 'AI Agent executing self-healing workflow...';
+
+            try {
+                const response = await fetch(baseApiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ requirement: reqText })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || `Server returned HTTP ${response.status}`);
+                }
+
+                if (data.status === 'success') {
+                    // Render comparison diff
+                    processAndRenderDiff(data.before, data.after);
+                    
+                    // Update baseline schema references
+                    currentSchema = data.after;
+                    
+                    showAlert(data.message || 'Workflow executed and schema updated successfully!', 'success');
+                } else {
+                    throw new Error(data.message || 'Operation returned failure.');
+                }
+
+            } catch (error) {
+                console.error("Workflow Execution Error:", error);
+                showAlert(`Workflow execution aborted: ${error.message}`, 'error');
+                afterPanel.classList.add('error-state');
+                afterContainer.innerHTML = `<div style="padding: 2rem; color: #ef4444; font-weight: 500;">❌ Execution Failed:<br><br>${escapeHtml(error.message)}</div>`;
+            } finally {
+                // Enable button, hide spinners
+                runBtn.disabled = false;
+                btnSpinner.style.display = 'none';
+                btnText.textContent = 'Execute Workflow';
+                overlayLoader.style.display = 'none';
+            }
+        });
+
+        // Trigger dynamic data constraints validation
+        validateBtn.addEventListener('click', async () => {
+            if (!activeNewField || !activeNewFieldSchema) return;
+            
+            validateResult.style.display = 'none';
+            
+            // Collect form data inputs
+            const inputs = testFormContainer.querySelectorAll('input');
+            const data = {};
+            let allValid = true;
+            
+            inputs.forEach(input => {
+                if (input.required && !input.value.trim()) {
+                    allValid = false;
+                    input.reportValidity();
+                }
+                data[input.name] = input.value.trim();
+            });
+            
+            if (!allValid) return;
+            
+            validateBtn.disabled = true;
+            validateBtn.textContent = 'Checking...';
+            
+            try {
+                const response = await fetch('/api/validate-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        fieldName: activeNewField,
+                        data: data,
+                        schema: activeNewFieldSchema
+                    })
+                });
+                
+                const resData = await response.json();
+                
+                validateResult.className = `alert-banner ${response.ok ? 'success' : 'error'}`;
+                
+                if (response.ok && resData.status === 'success') {
+                    validateResult.textContent = `✅ ${resData.message}`;
+                    validateResult.style.color = 'var(--success)';
+                    validateResult.style.backgroundColor = 'var(--success-light)';
+                    validateResult.style.borderColor = 'var(--success-border)';
+                } else {
+                    validateResult.textContent = `❌ ${resData.message || 'Validation failed.'}`;
+                    validateResult.style.color = 'var(--danger)';
+                    validateResult.style.backgroundColor = 'var(--danger-light)';
+                    validateResult.style.borderColor = 'var(--danger-border)';
+                }
+                validateResult.style.display = 'flex';
+                
+            } catch (e) {
+                validateResult.className = 'alert-banner error';
+                validateResult.textContent = `❌ Error calling validation service: ${e.message}`;
+                validateResult.style.color = 'var(--danger)';
+                validateResult.style.backgroundColor = 'var(--danger-light)';
+                validateResult.style.borderColor = 'var(--danger-border)';
+                validateResult.style.display = 'flex';
+            } finally {
+                validateBtn.disabled = false;
+                validateBtn.textContent = 'Validate Entry';
+            }
+        });
+
+        // Initialize dashboard
+        window.addEventListener('DOMContentLoaded', initSchema);
+    </script>
+</body>
+</html>

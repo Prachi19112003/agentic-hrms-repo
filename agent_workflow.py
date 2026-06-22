@@ -197,7 +197,8 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
     logger.info("Starting Agentic Workflow for requirement: '%s'\n", user_requirement)
     
     
-    load_dotenv()
+    load_dotenv(".env")
+    load_dotenv(".env.local")
     
     
     try:
@@ -208,13 +209,19 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
         existing_schema_content = "{}"
 
     
-    api_key=os.environ.get("GEMINI_API_KEY")
+    api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
     if not api_key:
         logger.error(
-            "Missing environment variable: GEMINI_API_KEY. "
+            "Missing environment variable: GOOGLE_API_KEY or GEMINI_API_KEY. "
             "Please define this inside your '.env' configuration or environment setup."
         )
         sys.exit(1)
+
+    api_key = api_key.strip()
+    if api_key.startswith(('"', "'")) and api_key.endswith(('"', "'")) and len(api_key) >= 2:
+        api_key = api_key[1:-1].strip()
+    if api_key.startswith("<") and api_key.endswith(">") and len(api_key) >= 2:
+        api_key = api_key[1:-1].strip()
 
     
     contents=[
@@ -254,6 +261,8 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
         }
         
         
+        # Debug API key length
+        logger.info("API Key length: %s", str(len(api_key)) if api_key else "undefined")
         url=f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
         
         try:

@@ -1,0 +1,99 @@
+diff --git a/employee_model.json b/employee_model.json
+index d4cc379..b0aec1a 100644
+--- a/employee_model.json
++++ b/employee_model.json
+@@ -6,6 +6,7 @@
+   "required": [
+     "employee_id",
+     "tenant_id",
++    "employee_status",
+     "personal_details",
+     "tax_compliance",
+     "tiered_payroll_structure",
+@@ -29,6 +30,16 @@
+       "format": "uuid",
+       "description": "Unique multi-tenant isolation identifier for enterprise clients."
+     },
++    "employee_status": {
++      "type": "string",
++      "enum": [
++        "Active",
++        "On_Leave",
++        "Terminated",
++        "Retired"
++      ],
++      "description": "Current employment status of the employee."
++    },
+     "personal_details": {
+       "type": "object",
+       "required": [
+@@ -486,7 +497,8 @@
+         "variable_compensation",
+         "benefit_allowances",
+         "retirement_matching_config",
+-        "deductions_hierarchy"
++        "deductions_hierarchy",
++        "anniversary_bonuses"
+       ],
+       "properties": {
+         "compensation_band": {
+@@ -751,6 +763,59 @@
+               }
+             }
+           }
++        },
++        "anniversary_bonuses": {
++          "type": "array",
++          "description": "Details tracking work anniversary bonuses with milestone years and corresponding bonus amounts.",
++          "items": {
++            "type": "object",
++            "required": [
++              "milestone_year",
++              "bonus_amount"
++            ],
++            "properties": {
++              "milestone_year": {
++                "type": "integer",
++                "minimum": 1,
++                "description": "The specific work anniversary year (e.g., 5, 10, 15 years of service)."
++              },
++              "bonus_amount": {
++                "type": "object",
++                "required": [
++                  "amount",
++                  "currency"
++                ],
++                "properties": {
++                  "amount": {
++                    "type": "number",
++                    "minimum": 0,
++                    "description": "The monetary amount of the anniversary bonus."
++                  },
++                  "currency": {
++                    "type": "string",
++                    "pattern": "^[A-Z]{3}$",
++                    "description": "ISO 4217 currency code for the bonus amount (e.g., USD, EUR)."
++                  }
++                }
++              },
++              "payout_date": {
++                "type": "string",
++                "format": "date",
++                "description": "The date when the bonus for this milestone was or will be paid."
++              },
++              "status": {
++                "type": "string",
++                "enum": [
++                  "Pending",
++                  "Paid",
++                  "Waived",
++                  "Not_Eligible"
++                ],
++                "default": "Pending",
++                "description": "Current status of the bonus payout for this milestone."
++              }
++            }
++          }
+         }
+       }
+     },
