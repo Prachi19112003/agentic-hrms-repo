@@ -2115,7 +2115,9 @@
       "description": "Details regarding employee parking permit allocation.",
       "required": [
         "permit_number",
-        "assigned_parking_zone"
+        "assigned_parking_zone",
+        "spot_number",
+        "assigned_by_employee_id"
       ],
       "properties": {
         "permit_number": {
@@ -2125,6 +2127,15 @@
         "assigned_parking_zone": {
           "type": "string",
           "description": "The specific parking zone or area assigned to the employee."
+        },
+        "spot_number": {
+          "type": "string",
+          "description": "The specific parking spot number allocated to the employee (e.g., 'A12', 'B-P3-007')."
+        },
+        "assigned_by_employee_id": {
+          "type": "string",
+          "pattern": "^EMP-[A-Z]{3,4}-\\d{5,8}$",
+          "description": "The employee ID of the HR or Facilities personnel who assigned the parking spot."
         }
       }
     },
