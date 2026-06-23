@@ -197,8 +197,7 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
     logger.info("Starting Agentic Workflow for requirement: '%s'\n", user_requirement)
     
     
-    load_dotenv(".env")
-    load_dotenv(".env.local")
+    load_dotenv()
     
     
     try:
@@ -209,19 +208,13 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
         existing_schema_content = "{}"
 
     
-    api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
+    api_key=os.environ.get("GEMINI_API_KEY")
     if not api_key:
         logger.error(
-            "Missing environment variable: GOOGLE_API_KEY or GEMINI_API_KEY. "
+            "Missing environment variable: GEMINI_API_KEY. "
             "Please define this inside your '.env' configuration or environment setup."
         )
         sys.exit(1)
-
-    api_key = api_key.strip()
-    if api_key.startswith(('"', "'")) and api_key.endswith(('"', "'")) and len(api_key) >= 2:
-        api_key = api_key[1:-1].strip()
-    if api_key.startswith("<") and api_key.endswith(">") and len(api_key) >= 2:
-        api_key = api_key[1:-1].strip()
 
     
     contents=[
@@ -261,8 +254,6 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
         }
         
         
-        # Debug API key length
-        logger.info("API Key length: %s", str(len(api_key)) if api_key else "undefined")
         url=f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
         
         try:
@@ -325,13 +316,48 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
 
 
 
-if __name__=="__main__":
-    try:
-        user_requirement=input("Enter your natural language schema update requirement: ").strip()
-        if not user_requirement:
-            logger.error("No requirement entered. Exiting.")
-            sys.exit(1)
-        run_agentic_workflow(user_requirement)
-    except KeyboardInterrupt:
-        logger.info("\nWorkflow cancelled by user. Exiting.")
-        sys.exit(0)
+if __name__ == "__main__":
+    import os
+    
+    # AGAR RENDER YA CLOUD PAR CHAL RAHA HAI
+    if os.environ.get("RENDER") or os.environ.get("PORT"):
+        from flask import Flask, request, jsonify
+        from flask_cors import CORS
+        import json
+
+        app = Flask(__name__)
+        CORS(app)
+
+        @app.route('/api/update-schema', methods=['POST'])
+        def update_schema():
+            try:
+                data = request.get_json()
+                user_requirement = data.get('requirement', '').strip()
+                if not user_requirement:
+                    return jsonify({"error": "No requirement provided"}), 400
+                
+                # Aapka asli function call ho raha hai
+                run_agent_workflow(user_requirement)
+                
+                with open('employee_model.json', 'r') as f:
+                    return jsonify({"status": "success", "updated_schema": json.load(f)})
+            except Exception as e:
+                return jsonify({"error": str(e)}), 500
+
+        port = int(os.environ.get("PORT", 5000))
+        app.run(host="0.0.0.0", port=port)
+        
+    
+    else:
+        try:
+            user_requirement = input("Enter your natural language schema update requirement: ").strip()
+            if not user_requirement:
+                print("No requirement entered. Exiting.")
+                sys.exit(1)
+            
+            # Wahi asli function call
+            run_agent_workflow(user_requirement)
+            
+        except KeyboardInterrupt:
+            print("\nWorkflow cancelled by user. Exiting.")
+            sys.exit(0)
