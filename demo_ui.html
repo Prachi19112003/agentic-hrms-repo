@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agentic HRMS Schema Update Dashboard</title>
-    <!-- Google Fonts Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -376,7 +375,6 @@
 <body>
 
     <div class="dashboard-container">
-        <!-- Header -->
         <header>
             <div class="header-title-area">
                 <h1>HRMS Schema Update Interface</h1>
@@ -390,7 +388,6 @@
             </div>
         </header>
 
-        <!-- Input Area Card -->
         <section class="input-card">
             <label for="requirement-input" class="form-label">Schema Update Requirement</label>
             <div class="textarea-wrapper">
@@ -402,16 +399,13 @@
             </button>
         </section>
 
-        <!-- Code Panels View -->
         <div style="position: relative;">
-            <!-- Overlay loader -->
             <div id="overlay-loader" class="overlay-loader">
                 <div class="overlay-spinner"></div>
                 <div class="overlay-text">AI Agent executing workflow...</div>
             </div>
 
             <section class="panels-container">
-                <!-- Before Panel -->
                 <div class="panel-card">
                     <div class="panel-header">
                         <div class="panel-title">Before Schema</div>
@@ -420,7 +414,6 @@
                     <div id="before-code" class="code-wrapper"></div>
                 </div>
 
-                <!-- After Panel -->
                 <div class="panel-card">
                     <div class="panel-header">
                         <div class="panel-title">After Schema</div>
@@ -433,92 +426,37 @@
     </div>
 
     <script>
-        // Mock Schema data for demo setup
+        // Baseline Initial Schema data
         const mockBeforeSchema = {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "EmployeeProfile",
-  "type": "object",
-  "required": [
-    "employee_id",
-    "personal_details"
-  ],
-  "properties": {
-    "employee_id": {
-      "type": "string",
-      "pattern": "^EMP-[A-Z]{3}-\\d{5}$"
-    },
-    "personal_details": {
-      "type": "object",
-      "required": [
-        "first_name",
-        "last_name"
-      ],
-      "properties": {
-        "first_name": {
-          "type": "string"
-        },
-        "last_name": {
-          "type": "string"
-        }
-      }
-    }
-  }
-};
-
-        const mockAfterSchema = {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "EmployeeProfile",
-  "type": "object",
-  "required": [
-    "employee_id",
-    "personal_details",
-    "laptop_allocation"
-  ],
-  "properties": {
-    "employee_id": {
-      "type": "string",
-      "pattern": "^EMP-[A-Z]{3}-\\d{5}$"
-    },
-    "personal_details": {
-      "type": "object",
-      "required": [
-        "first_name",
-        "last_name"
-      ],
-      "properties": {
-        "first_name": {
-          "type": "string"
-        },
-        "last_name": {
-          "type": "string"
-        }
-      }
-    },
-    "laptop_allocation": {
-      "type": "object",
-      "required": [
-        "asset_tag",
-        "model_name",
-        "issue_date"
-      ],
-      "properties": {
-        "asset_tag": {
-          "type": "string",
-          "description": "Unique corporate asset tag."
-        },
-        "model_name": {
-          "type": "string",
-          "description": "Manufacturer model designation."
-        },
-        "issue_date": {
-          "type": "string",
-          "format": "date",
-          "description": "Date the laptop was assigned."
-        }
-      }
-    }
-  }
-};
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "title": "EmployeeProfile",
+            "type": "object",
+            "required": [
+                "employee_id",
+                "personal_details"
+            ],
+            "properties": {
+                "employee_id": {
+                    "type": "string",
+                    "pattern": "^EMP-[A-Z]{3}-\\d{5}$"
+                },
+                "personal_details": {
+                    "type": "object",
+                    "required": [
+                        "first_name",
+                        "last_name"
+                    ],
+                    "properties": {
+                        "first_name": {
+                            "type": "string"
+                        },
+                        "last_name": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        };
 
         // DOM elements
         const beforeContainer = document.getElementById('before-code');
@@ -529,16 +467,7 @@
         const btnText = document.getElementById('btn-text');
         const overlayLoader = document.getElementById('overlay-loader');
 
-        // Helper to escape HTML characters
-        function escapeHtml(str) {
-            return str.replace(/&/g, '&amp;')
-                      .replace(/</g, '&lt;')
-                      .replace(/>/g, '&gt;')
-                      .replace(/"/g, '&quot;')
-                      .replace(/'/g, '&#039;');
-        }
-
-        // Render code panel line-by-line
+        // Helper to render code panel line-by-line
         function renderCode(text, container) {
             container.innerHTML = '';
             const lines = text.split('\n');
@@ -566,7 +495,6 @@
             const beforeLines = beforeText.split('\n');
             const afterLines = afterText.split('\n');
             
-            // Build a set of trimmed lines in 'before' for easy lookup
             const beforeSet = new Set(beforeLines.map(l => l.trim()));
             
             afterLines.forEach((line, index) => {
@@ -574,7 +502,7 @@
                 lineDiv.className = 'code-line';
                 
                 const trimmed = line.trim();
-                // If the line is non-empty and doesn't exist in before, mark it as added
+                // Highlight logic for dynamic additions
                 if (trimmed && trimmed !== '}' && trimmed !== '],' && !beforeSet.has(trimmed)) {
                     lineDiv.classList.add('added');
                 }
@@ -593,12 +521,12 @@
             });
         }
 
-        // Initialize UI with initial schemas
+        // Initialize UI panels with initial baseline schemas
         const beforeJsonStr = JSON.stringify(mockBeforeSchema, null, 2);
         renderCode(beforeJsonStr, beforeContainer);
-        renderCode(beforeJsonStr, afterContainer); // Initially "after" is the same as "before"
+        renderCode(beforeJsonStr, afterContainer); 
 
-        // Handle Click Event (Mocking backend execution)
+        // Handle Click Event (Real Render Backend Integration)
         runBtn.addEventListener('click', () => {
             const reqText = requirementInput.value.trim();
             if (!reqText) {
@@ -606,25 +534,47 @@
                 return;
             }
 
-            // Disable button, show spinners
+            // Disable button, show active loading states
             runBtn.disabled = true;
             btnSpinner.style.display = 'block';
             btnText.textContent = 'Processing...';
             overlayLoader.style.display = 'flex';
 
-            // Simulate backend run (2 seconds)
-            setTimeout(() => {
-                const afterJsonStr = JSON.stringify(mockAfterSchema, null, 2);
-                
-                // Show updated code in right panel with highlights
-                renderDiff(beforeJsonStr, afterJsonStr, afterContainer);
-
-                // Enable button, hide spinners
+            // Network Fetch Call to Live Render Engine
+            fetch('https://agentic-hrms-repo.onrender.com/api/update-schema', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ "requirement": reqText })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response failure: ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(resData => {
+                if (resData.status === "success" && resData.updated_schema) {
+                    const afterJsonStr = JSON.stringify(resData.updated_schema, null, 2);
+                    
+                    // Dynamically map and render the difference in the right panel
+                    renderDiff(beforeJsonStr, afterJsonStr, afterContainer);
+                } else if (resData.error) {
+                    alert('Error from Pipeline Agent: ' + resData.error);
+                }
+            })
+            .catch(error => {
+                console.error('API Connection Error:', error);
+                alert('Backend is spinning up or failed to respond. Please check your Render service status!');
+            })
+            .finally(() => {
+                // Restore interactive state upon completion
                 runBtn.disabled = false;
                 btnSpinner.style.display = 'none';
                 btnText.textContent = 'Execute Workflow';
                 overlayLoader.style.display = 'none';
-            }, 2000);
+            });
         });
     </script>
 </body>

@@ -19,7 +19,8 @@
     "work_authorization_visa",
     "career_and_learning_development",
     "disciplinary_and_grievance_records",
-    "desk_allocation"
+    "desk_allocation",
+    "laptop_allocation"
   ],
   "properties": {
     "employee_id": {
@@ -636,7 +637,7 @@
             },
             "discretionary_bonus_multiplier": {
               "type": "number",
-              "default": 1.0
+              "default": 1
             }
           }
         },
@@ -1236,7 +1237,8 @@
         "okr_evaluations",
         "calibration_grid_score",
         "competency_ratings",
-        "performance_improvement_plan"
+        "performance_improvement_plan",
+        "individual_performance_reviews"
       ],
       "properties": {
         "appraisal_cycle_id": {
@@ -1263,7 +1265,7 @@
               "weightage": {
                 "type": "number",
                 "minimum": 0,
-                "maximum": 1.0
+                "maximum": 1
               },
               "key_results": {
                 "type": "array",
@@ -1292,13 +1294,13 @@
                     },
                     "self_assessment_score": {
                       "type": "number",
-                      "minimum": 1.0,
-                      "maximum": 5.0
+                      "minimum": 1,
+                      "maximum": 5
                     },
                     "manager_assessment_score": {
                       "type": "number",
-                      "minimum": 1.0,
-                      "maximum": 5.0
+                      "minimum": 1,
+                      "maximum": 5
                     }
                   }
                 }
@@ -1313,7 +1315,8 @@
             "potential_score",
             "nine_box_placement",
             "calibration_date",
-            "calibration_committee_reference"
+            "calibration_committee_reference",
+            "overall_nine_box_score"
           ],
           "properties": {
             "performance_score": {
@@ -1348,6 +1351,12 @@
             },
             "calibration_committee_reference": {
               "type": "string"
+            },
+            "overall_nine_box_score": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9,
+              "description": "An aggregated numeric score (1-9) representing the employee's placement within the 9-box grid, useful for quantitative analysis."
             }
           }
         },
@@ -1375,8 +1384,8 @@
               },
               "rating": {
                 "type": "number",
-                "minimum": 1.0,
-                "maximum": 5.0
+                "minimum": 1,
+                "maximum": 5
               },
               "evaluated_by": {
                 "type": "string",
@@ -1453,6 +1462,78 @@
             "consequences_of_failure": {
               "type": "string"
             }
+          }
+        },
+        "individual_performance_reviews": {
+          "type": "array",
+          "description": "Records of individual performance reviews conducted for the employee.",
+          "items": {
+            "type": "object",
+            "required": [
+              "review_id",
+              "review_period_identifier",
+              "reviewer_employee_id",
+              "employee_rating",
+              "review_status",
+              "manager_feedback"
+            ],
+            "properties": {
+              "review_id": {
+                "type": "string",
+                "pattern": "^REV-[A-Z]{3,4}-\\d{5,8}$",
+                "description": "Unique identifier for this performance review (e.g., REV-APAC-123456)."
+              },
+              "review_period_identifier": {
+                "type": "string",
+                "description": "Identifier for the review period (e.g., '2023 Annual Review', 'Q3 2024 Mid-Year')."
+              },
+              "review_date": {
+                "type": "string",
+                "format": "date",
+                "description": "Date the review was completed/submitted."
+              },
+              "employee_rating": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5,
+                "description": "Overall performance rating on a scale of 1 to 5, where 5 is exceptional."
+              },
+              "review_status": {
+                "type": "string",
+                "enum": [
+                  "Draft",
+                  "Submitted",
+                  "Approved"
+                ],
+                "description": "Current status of the performance review."
+              },
+              "manager_feedback": {
+                "type": "string",
+                "description": "Mandatory detailed feedback provided by the manager."
+              },
+              "reviewer_employee_id": {
+                "type": "string",
+                "pattern": "^EMP-[A-Z]{3,4}-\\d{5,8}$",
+                "description": "The employee ID of the manager who conducted this review."
+              }
+            },
+            "allOf": [
+              {
+                "not": {
+                  "properties": {
+                    "reviewer_employee_id": {
+                      "const": {
+                        "$data": "/employee_id"
+                      }
+                    }
+                  },
+                  "required": [
+                    "reviewer_employee_id"
+                  ]
+                },
+                "description": "A manager cannot self-review; 'reviewer_employee_id' must not be the same as the 'employee_id' of the employee whose profile this is."
+              }
+            ]
           }
         }
       }
@@ -2055,6 +2136,58 @@
           "type": "string",
           "format": "date",
           "description": "Date when the desk assignment is scheduled to end (null if permanent or indefinite)."
+        }
+      }
+    },
+    "laptop_allocation": {
+      "type": "object",
+      "description": "Details regarding the employee's allocated company laptop, conforming to strict HRMS allocation requirements.",
+      "required": [
+        "allocation_id",
+        "asset_tag",
+        "model_name",
+        "issue_date",
+        "assigner_employee_id"
+      ],
+      "properties": {
+        "allocation_id": {
+          "type": "string",
+          "pattern": "^LAP-ALLOC-[A-Z]{3,}-\\d{5,}$",
+          "description": "Unique identifier for this specific laptop allocation event."
+        },
+        "asset_tag": {
+          "type": "string",
+          "description": "Unique physical asset tag assigned to the laptop."
+        },
+        "model_name": {
+          "type": "string",
+          "description": "Manufacturer and model name of the laptop."
+        },
+        "issue_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when the laptop was issued to the employee."
+        },
+        "assigner_employee_id": {
+          "type": "string",
+          "pattern": "^EMP-[A-Z]{3,4}-\\d{5,8}$",
+          "description": "The employee ID of the IT or HR personnel who assigned the laptop. This ID should not be the same as the 'employee_id' of the recipient (the employee whose profile this is part of), preventing self-allocation of the asset management process."
+        },
+        "return_date": {
+          "type": "string",
+          "format": "date",
+          "description": "Date when the laptop was returned, if applicable."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Assigned",
+            "Returned",
+            "Lost",
+            "Damaged"
+          ],
+          "default": "Assigned",
+          "description": "Current status of the laptop asset."
         }
       }
     },
