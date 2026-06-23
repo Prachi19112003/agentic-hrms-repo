@@ -251,7 +251,7 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
                         "text": "You are an autonomous AI Engineer. Update the given HRMS JSON schema based on the requirement. Return ONLY valid JSON with no markdown, no explanation. Just the raw updated JSON object."
                     }
                 ]
-            ,
+            },
             "generationConfig": {
                 "responseMimeType": "application/json"
             }
@@ -366,4 +366,4 @@ if __name__ == "__main__":
             
         except KeyboardInterrupt:
             print("\nWorkflow cancelled by user. Exiting.")
-            sys.exit(0)
+            sys.exit(0)}
