@@ -74,7 +74,8 @@ def fetch(url: str, headers: dict=None, body: dict=None, method: str="POST")->Re
             
     req=urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(req) as response:
+        # Enforce a 30-second timeout on requests
+        with urllib.request.urlopen(req, timeout=30) as response:
             status = response.status
             res_headers = dict(response.info())
             res_body = response.read().decode("utf-8")
@@ -249,7 +250,7 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
             "Content-Type": "application/json"
         }
         
-        url=f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+        url=f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
         
         try:
             resp=fetch(url, headers=headers, body=payload)
@@ -307,43 +308,132 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
 if __name__ == "__main__":
     import os
     
-    if os.environ.get("RENDER") or os.environ.get("PORT"):
+    # LOCAL PAR BHI DIRECT FLASK WEBSITE BACKEND CHALANE KE LIYE FORCE OVERRIDE
+    if (os.environ.get("RENDER") or os.environ.get("PORT") or True) and not os.environ.get("CLI_MODE"):
         from flask import Flask, request, jsonify
         from flask_cors import CORS
         import json
 
         app = Flask(__name__)
-        CORS(app)
+        CORS(app)  # Block CORS errors during local file development
 
-        @app.route('/api/update-schema', methods=['POST'])
+        @app.route('/api/update-schema', methods=['GET', 'POST'])
         def update_schema():
+            file_path = "employee_model.json"
+            if os.environ.get("RENDER"):
+                file_path = os.path.join('/tmp', 'employee_model.json')
+
+            if request.method == 'GET':
+                try:
+                    if not os.path.exists(file_path):
+                        return jsonify({"error": "Schema file not found"}), 404
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        return jsonify({"status": "success", "schema": json.load(f)})
+                except Exception as e:
+                    return jsonify({"error": str(e)}), 500
+
+            # POST request
             try:
-                data = request.get_json()
+                data = request.get_json() or {}
                 user_requirement = data.get('requirement', '').strip()
                 if not user_requirement:
                     return jsonify({"error": "No requirement provided"}), 400
                 
-                # Dynamic override target passed inside loop
-                cloud_file_path = os.path.join('/tmp', 'employee_model.json')
-                run_agentic_workflow(user_requirement, cloud_file_path)
+                # Capture the original schema before running
+                if os.path.exists(file_path):
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        before_schema = json.load(f)
+                else:
+                    before_schema = {}
+
+                run_agentic_workflow(user_requirement, file_path)
                 
-                with open(cloud_file_path, 'r', encoding='utf-8') as f:
-                    return jsonify({"status": "success", "updated_schema": json.load(f)})
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    after_schema = json.load(f)
+                    
+                return jsonify({
+                    "status": "success",
+                    "before": before_schema,
+                    "after": after_schema,
+                    "message": "Schema successfully updated, validated, and saved to repository."
+                })
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
 
+        @app.route('/api/validate-data', methods=['POST'])
+        def validate_data():
+            try:
+                req_data = request.get_json() or {}
+                field_name = req_data.get('fieldName')
+                data = req_data.get('data')
+                schema = req_data.get('schema')
+                
+                if not field_name or data is None or schema is None:
+                    return jsonify({"status": "error", "message": "Missing parameters (fieldName, data, schema)."}), 400
+
+                required_fields = schema.get('required', [])
+                
+                # 1. Check all required fields are filled in
+                missing_fields = []
+                for req_field in required_fields:
+                    val = data.get(req_field)
+                    if val is None or str(val).strip() == '':
+                        missing_fields.append(req_field)
+                
+                if missing_fields:
+                    return jsonify({
+                        "status": "error",
+                        "message": f"Required field validation failed: Missing fields [{', '.join(missing_fields)}]"
+                    }), 422
+
+                # 2. Validate employee_id format
+                import re
+                for key, val in data.items():
+                    if 'employee_id' in key.lower():
+                        pattern = r"^EMP-[A-Z]{3,4}-\d{5,8}$"
+                        if not re.match(pattern, str(val)):
+                            return jsonify({
+                                "status": "error",
+                                "message": f"Invalid Employee ID format - expected EMP-XXX-12345 style, got: '{val}'"
+                            }), 422
+
+                # 3. Validate self-allocation for paired fields
+                keys = data.keys()
+                has_issued_by = 'issued_by' in keys or 'allotted_by' in keys
+                has_issued_to = 'issued_to' in keys or 'allotted_to' in keys
+                if has_issued_by and has_issued_to:
+                    by_field = 'issued_by' if 'issued_by' in keys else 'allotted_by'
+                    to_field = 'issued_to' if 'issued_to' in keys else 'allotted_to'
+                    
+                    by_value = str(data.get(by_field, '')).strip()
+                    to_value = str(data.get(to_field, '')).strip()
+                    
+                    if by_value and to_value and by_value.lower() == to_value.lower():
+                        return jsonify({
+                            "status": "error",
+                            "message": "Issuer and recipient cannot be the same person"
+                        }), 422
+
+                return jsonify({
+                    "status": "success",
+                    "message": "All constraints passed - this data entry is valid"
+                }), 200
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+
         port = int(os.environ.get("PORT", 5000))
-        app.run(host="0.0.0.0", port=port)
-        
+        app.run(host="0.0.0.0", port=port, debug=True)
     else:
         try:
-            user_requirement = input("Enter your natural language schema update requirement: ").strip()
+            import sys
+            if len(sys.argv) > 1:
+                user_requirement = " ".join(sys.argv[1:]).strip()
+            else:
+                user_requirement = input("Enter your natural language schema update requirement: ").strip()
             if not user_requirement:
                 print("No requirement entered. Exiting.")
                 sys.exit(1)
-            
             run_agentic_workflow(user_requirement, "employee_model.json")
-            
         except KeyboardInterrupt:
             print("\nWorkflow cancelled by user. Exiting.")
             sys.exit(0)

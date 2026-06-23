@@ -546,7 +546,7 @@
         const validateResult = document.getElementById('validate-result');
 
         let currentSchema = null;
-        let baseApiUrl = '/api/update-schema'; 
+        let baseApiUrl = 'http://localhost:5000/api/update-schema'; 
         
         let activeNewField = '';
         let activeNewFieldSchema = null;
@@ -677,10 +677,22 @@
             const afterProps = after.properties || {};
             
             let changedKey = null;
+            
+            // 1. Check for brand-new keys first
             for (const key of Object.keys(afterProps)) {
-                if (!beforeProps[key] || JSON.stringify(beforeProps[key]) !== JSON.stringify(afterProps[key])) {
+                if (!beforeProps[key]) {
                     changedKey = key;
                     break;
+                }
+            }
+            
+            // 2. Fall back to modified keys if no new keys were added
+            if (!changedKey) {
+                for (const key of Object.keys(afterProps)) {
+                    if (JSON.stringify(beforeProps[key]) !== JSON.stringify(afterProps[key])) {
+                        changedKey = key;
+                        break;
+                    }
                 }
             }
             
@@ -823,7 +835,7 @@
             validateBtn.textContent = 'Checking...';
             
             try {
-                const response = await fetch('/api/validate-data', {
+                const response = await fetch('http://localhost:5000/api/validate-data', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

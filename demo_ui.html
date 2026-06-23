@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agentic HRMS Schema Update Dashboard</title>
+    <title>Agentic HRMS Schema Update Dashboard (Localhost)</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -377,13 +377,13 @@
     <div class="dashboard-container">
         <header>
             <div class="header-title-area">
-                <h1>HRMS Schema Update Interface</h1>
-                <p>AI-driven model updates with automated validation & version control</p>
+                <h1>HRMS Schema Update Interface (Localhost)</h1>
+                <p>AI-driven model updates with automated validation running locally</p>
             </div>
             <div class="badge-container">
                 <div class="status-badge">
                     <span class="status-dot"></span>
-                    <span>Ready</span>
+                    <span>Localhost Mode</span>
                 </div>
             </div>
         </header>
@@ -402,7 +402,7 @@
         <div style="position: relative;">
             <div id="overlay-loader" class="overlay-loader">
                 <div class="overlay-spinner"></div>
-                <div class="overlay-text">AI Agent executing workflow...</div>
+                <div class="overlay-text">AI Agent executing workflow locally...</div>
             </div>
 
             <section class="panels-container">
@@ -458,7 +458,6 @@
             }
         };
 
-        // DOM elements
         const beforeContainer = document.getElementById('before-code');
         const afterContainer = document.getElementById('after-code');
         const requirementInput = document.getElementById('requirement-input');
@@ -467,7 +466,6 @@
         const btnText = document.getElementById('btn-text');
         const overlayLoader = document.getElementById('overlay-loader');
 
-        // Helper to render code panel line-by-line
         function renderCode(text, container) {
             container.innerHTML = '';
             const lines = text.split('\n');
@@ -489,20 +487,17 @@
             });
         }
 
-        // Diff rendering: highlights lines added to 'after' that don't exist in 'before'
         function renderDiff(beforeText, afterText, container) {
             container.innerHTML = '';
             const beforeLines = beforeText.split('\n');
             const afterLines = afterText.split('\n');
-            
             const beforeSet = new Set(beforeLines.map(l => l.trim()));
             
             afterLines.forEach((line, index) => {
                 const lineDiv = document.createElement('div');
                 lineDiv.className = 'code-line';
-                
                 const trimmed = line.trim();
-                // Highlight logic for dynamic additions
+                
                 if (trimmed && trimmed !== '}' && trimmed !== '],' && !beforeSet.has(trimmed)) {
                     lineDiv.classList.add('added');
                 }
@@ -521,12 +516,10 @@
             });
         }
 
-        // Initialize UI panels with initial baseline schemas
         const beforeJsonStr = JSON.stringify(mockBeforeSchema, null, 2);
         renderCode(beforeJsonStr, beforeContainer);
         renderCode(beforeJsonStr, afterContainer); 
 
-        // Handle Click Event (Real Render Backend Integration)
         runBtn.addEventListener('click', () => {
             const reqText = requirementInput.value.trim();
             if (!reqText) {
@@ -534,14 +527,13 @@
                 return;
             }
 
-            // Disable button, show active loading states
             runBtn.disabled = true;
             btnSpinner.style.display = 'block';
             btnText.textContent = 'Processing...';
             overlayLoader.style.display = 'flex';
 
-            // Network Fetch Call to Live Render Engine
-            fetch('https://agentic-hrms-repo.onrender.com/api/update-schema', {
+            // TARGET LOCALHOST SECURE DESKTOP PIPELINE
+            fetch('http://127.0.0.1:5000/api/update-schema', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -557,8 +549,6 @@
             .then(resData => {
                 if (resData.status === "success" && resData.updated_schema) {
                     const afterJsonStr = JSON.stringify(resData.updated_schema, null, 2);
-                    
-                    // Dynamically map and render the difference in the right panel
                     renderDiff(beforeJsonStr, afterJsonStr, afterContainer);
                 } else if (resData.error) {
                     alert('Error from Pipeline Agent: ' + resData.error);
@@ -566,10 +556,9 @@
             })
             .catch(error => {
                 console.error('API Connection Error:', error);
-                alert('Backend is spinning up or failed to respond. Please check your Render service status!');
+                alert('Failed to connect to local Flask server. Make sure agent_workflow.py is running on port 5000!');
             })
             .finally(() => {
-                // Restore interactive state upon completion
                 runBtn.disabled = false;
                 btnSpinner.style.display = 'none';
                 btnText.textContent = 'Execute Workflow';
