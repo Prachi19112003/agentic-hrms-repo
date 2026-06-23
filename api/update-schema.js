@@ -177,15 +177,15 @@ function callGeminiAPI(apiKey, schemaContent, requirement) {
                 parts: [{ text: `Existing Schema:\n${schemaContent}\n\nRequirement:\n${requirement}` }]
             }
         ],
-        systemInstruction: {
+        system_instruction: {
             parts: [{ text: "You are an autonomous AI Engineer. Update the given HRMS JSON schema based on the requirement. Return ONLY valid JSON with no markdown, no explanation. Just the raw updated JSON object. Ensure that if any ID or allocation fields are added, they conform to strict HRMS requirements (e.g. employee_id pattern must be '^EMP-[A-Z]{3,4}-\\d{5,8}$', and allocation objects must require both assigner and assignee, with descriptions preventing self-allocation)." }]
         },
-        generationConfig: {
-            responseMimeType: "application/json"
+        generation_config: {
+            response_mime_type: "application/json"
         }
     };
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     return new Promise((resolve, reject) => {
         const bodyStr = JSON.stringify(payload);

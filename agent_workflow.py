@@ -234,15 +234,15 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
         
         payload = {
             "contents": contents,
-            "systemInstruction": {
+            "system_instruction": {
                 "parts": [
                     {
                         "text": "You are an autonomous AI Engineer. Update the given HRMS JSON schema based on the requirement. Return ONLY valid JSON with no markdown, no explanation. Just the raw updated JSON object."
                     }
                 ]
             },
-            "generationConfig": {
-                "responseMimeType": "application/json"
+            "generation_config": {
+                "response_mime_type": "application/json"
             }
         }
         
@@ -250,7 +250,7 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
             "Content-Type": "application/json"
         }
         
-        url=f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
+        url=f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
         
         try:
             resp=fetch(url, headers=headers, body=payload)
