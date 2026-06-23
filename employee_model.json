@@ -659,13 +659,12 @@
                   "Wellness",
                   "Car_Allowance",
                   "Remote_Work",
-                  "Educational_Assistance",
-                  "Gym_Membership"
+                  "Educational_Assistance"
                 ]
               },
               "amount": {
                 "type": "number",
-                "description": "For Gym_Membership, this represents the monthly limit."
+                "description": "The monetary amount of the allowance."
               },
               "taxable": {
                 "type": "boolean"
@@ -681,7 +680,7 @@
               },
               "provider_name": {
                 "type": "string",
-                "description": "Name of the provider, e.g., gym name for Gym_Membership reimbursement."
+                "description": "Name of the provider, if applicable."
               }
             }
           }
@@ -1903,7 +1902,8 @@
           "required": [
             "dental_plan",
             "vision_plan",
-            "life_insurance"
+            "life_insurance",
+            "gym_membership"
           ],
           "properties": {
             "dental_plan": {
@@ -1984,6 +1984,39 @@
                       }
                     }
                   }
+                }
+              }
+            },
+            "gym_membership": {
+              "type": "object",
+              "description": "Details about the employee's gym membership.",
+              "required": [
+                "enrolled",
+                "monthly_fee",
+                "provider_name"
+              ],
+              "properties": {
+                "enrolled": {
+                  "type": "boolean",
+                  "description": "Indicates if the employee is enrolled in a company-sponsored gym membership."
+                },
+                "monthly_fee": {
+                  "type": "number",
+                  "minimum": 0,
+                  "description": "The monthly fee or reimbursement amount for the gym membership."
+                },
+                "provider_name": {
+                  "type": "string",
+                  "description": "Name of the gym or wellness provider."
+                },
+                "membership_id": {
+                  "type": "string",
+                  "description": "Optional unique ID for the specific gym membership."
+                },
+                "last_verification_date": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Date of the last verification of membership status."
                 }
               }
             }
