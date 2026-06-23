@@ -133,14 +133,11 @@ def mock_test_and_validate(file_path: str, min_complex_fields: int = 5)->tuple[b
 
 def auto_git_commit_and_push(user_requirement: str, file_path: str="employee_model.json")->None:
     """Stages, commits, and pushes the updated schema file automatically."""
-    # Cloud environments like Render are Read-Only environments; 
-    # If the file path is pointing to /tmp directory, we skip Git pipelines.
     if "/tmp" in file_path or os.environ.get("RENDER") or os.environ.get("PORT"):
         logger.info("Cloud execution context detected. Skipping local Git automated pipeline.")
         return
 
     logger.info("Starting automated Git commit and push pipeline...")
-    
     try:
         add_res=subprocess.run(
             ["git", "add", file_path],
@@ -193,25 +190,19 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
     
     load_dotenv()
     
-    # SYSTEM CHECK: If running on cloud environment, safely intercept paths to write to /tmp
-    original_path = file_path
+    # Cloud Runtime path enforcement override
     if os.environ.get("RENDER") or os.environ.get("PORT"):
-        target_dir = "/tmp"
-        resolved_file_path = os.path.join(target_dir, os.path.basename(file_path))
-        
-        # Hydrate /tmp with current repository model baseline if it's not present
-        if not os.path.exists(resolved_file_path) and os.path.exists(original_path):
-            shutil.copy(original_path, resolved_file_path)
-            logger.info("Hydrated temporary cloud workspace path: %s", resolved_file_path)
-        file_path = resolved_file_path
+        file_path = os.path.join('/tmp', 'employee_model.json')
+        if not os.path.exists(file_path) and os.path.exists('employee_model.json'):
+            shutil.copy('employee_model.json', file_path)
+            logger.info("Enforced cloud runtime path copy: %s", file_path)
 
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             existing_schema_content = f.read()
     except FileNotFoundError:
-        # Fallback loop initialization if file does not exist anywhere yet
-        if file_path != original_path and os.path.exists(original_path):
-            with open(original_path, "r", encoding="utf-8") as f:
+        if file_path != 'employee_model.json' and os.path.exists('employee_model.json'):
+            with open('employee_model.json', "r", encoding="utf-8") as f:
                 existing_schema_content = f.read()
         else:
             logger.warning("Target schema file '%s' not found. Initializing new schema.", file_path)
@@ -219,10 +210,7 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
 
     api_key=os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        logger.error(
-            "Missing environment variable: GEMINI_API_KEY. "
-            "Please define this inside your setup."
-        )
+        logger.error("Missing environment variable: GEMINI_API_KEY.")
         sys.exit(1)
 
     contents=[
@@ -280,7 +268,6 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
             
             cleaned_json_str=clean_json_response(raw_assistant_response)
             
-            # Safe write capability guaranteed by runtime /tmp redirection
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(cleaned_json_str)
             
@@ -288,7 +275,6 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
             
             if valid:
                 logger.info("Success: %s", message)
-                logger.info("Integrity of code verified. Final output pushed to repository without bugs.")
                 auto_git_commit_and_push(user_requirement, file_path)
                 success = True
                 break
@@ -314,14 +300,13 @@ def run_agentic_workflow(user_requirement: str, file_path: str="employee_model.j
             attempts+=1
             
     if not success:
-        logger.error("Workflow stopped: Maximum self-healing attempts reached. Manual review needed.")
+        logger.error("Workflow stopped: Maximum self-healing attempts reached.")
         sys.exit(1)
 
 
 if __name__ == "__main__":
     import os
     
-    # AGAR RENDER YA CLOUD PAR CHAL RAHA HAI
     if os.environ.get("RENDER") or os.environ.get("PORT"):
         from flask import Flask, request, jsonify
         from flask_cors import CORS
@@ -338,15 +323,11 @@ if __name__ == "__main__":
                 if not user_requirement:
                     return jsonify({"error": "No requirement provided"}), 400
                 
-                # Asli function execute pipeline runs inside safe workspace
-                run_agent_workflow(user_requirement, "employee_model.json")
+                # Dynamic override target passed inside loop
+                cloud_file_path = os.path.join('/tmp', 'employee_model.json')
+                run_agentic_workflow(user_requirement, cloud_file_path)
                 
-                # Read dynamic output from /tmp layer rather than root workspace
-                target_path = os.path.join('/tmp', 'employee_model.json')
-                if not os.path.exists(target_path):
-                    target_path = 'employee_model.json'
-
-                with open(target_path, 'r', encoding='utf-8') as f:
+                with open(cloud_file_path, 'r', encoding='utf-8') as f:
                     return jsonify({"status": "success", "updated_schema": json.load(f)})
             except Exception as e:
                 return jsonify({"error": str(e)}), 500
@@ -354,7 +335,6 @@ if __name__ == "__main__":
         port = int(os.environ.get("PORT", 5000))
         app.run(host="0.0.0.0", port=port)
         
-    # AGAR AAP APNE LOCAL MACHINE PAR TERMINAL SE CHALA RAHI HAIN
     else:
         try:
             user_requirement = input("Enter your natural language schema update requirement: ").strip()
@@ -362,7 +342,7 @@ if __name__ == "__main__":
                 print("No requirement entered. Exiting.")
                 sys.exit(1)
             
-            run_agent_workflow(user_requirement, "employee_model.json")
+            run_agentic_workflow(user_requirement, "employee_model.json")
             
         except KeyboardInterrupt:
             print("\nWorkflow cancelled by user. Exiting.")
